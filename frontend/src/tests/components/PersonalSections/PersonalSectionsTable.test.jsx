@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import PersonalSectionsTable from "main/components/PersonalSections/PersonalSectionsTable";
 import { currentUserFixtures } from "fixtures/currentUserFixtures";
 import { personalSectionsFixtures } from "fixtures/personalSectionsFixtures";
+import { personalSectionsSessionFixtures } from "fixtures/personalSectionsSessionFixtures";
 
 const mockedNavigate = vi.fn();
 
@@ -89,6 +90,7 @@ describe("PersonalSectionsTable tests", () => {
       "Course ID",
       "Enroll Code",
       "Section",
+      "Session",
       "Title",
       "Enrolled",
       "Location",
@@ -100,6 +102,7 @@ describe("PersonalSectionsTable tests", () => {
       "courseId",
       "enrollCode",
       "section",
+      "session",
       "title",
       "enrolled",
       "location",
@@ -185,5 +188,45 @@ describe("PersonalSectionsTable tests", () => {
     fireEvent.click(deleteButton);
 
     await waitFor(() => expect(mockedMutate).toHaveBeenCalledTimes(1));
+  });
+
+  test.each([
+    {
+      name: "displays A for a summer session A course",
+      course: personalSectionsSessionFixtures.summerA,
+      expected: "A",
+    },
+    {
+      name: "displays B for a summer session B course",
+      course: personalSectionsSessionFixtures.summerB,
+      expected: "B",
+    },
+    {
+      name: "leaves Session blank for a non-summer course",
+      course: personalSectionsSessionFixtures.fallWithSession,
+      expected: "",
+    },
+    {
+      name: "leaves Session blank when summer session information is missing",
+      course: personalSectionsSessionFixtures.summerWithoutSession,
+      expected: "",
+    },
+  ])("$name", ({ course, expected }) => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PersonalSectionsTable
+            personalSections={[course]}
+            psId={1}
+            currentUser={currentUserFixtures.userOnly}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const sessionCell = screen.getByTestId(
+      "PersonalSectionsTable-cell-row-0-col-session",
+    );
+    expect(sessionCell.textContent).toBe(expected);
   });
 });
