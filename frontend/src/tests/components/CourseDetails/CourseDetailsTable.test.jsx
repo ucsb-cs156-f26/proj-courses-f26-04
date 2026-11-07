@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 
 import CourseDetailsTable from "main/components/CourseDetails/CourseDetailsTable";
 import { personalSectionsFixtures } from "fixtures/personalSectionsFixtures";
+import { courseDetailsSessionFixtures } from "fixtures/courseDetailsSessionFixtures";
 
 const mockedNavigate = vi.fn();
 
@@ -51,6 +52,7 @@ describe("CourseDetailsTable tests", () => {
       "Course ID",
       "Enroll Code",
       "Section",
+      "Session",
       "Title",
       "Enrolled",
       "Location",
@@ -62,6 +64,7 @@ describe("CourseDetailsTable tests", () => {
       "courseId",
       "enrollCode",
       "section",
+      "session",
       "title",
       "enrolled",
       "location",
@@ -118,5 +121,69 @@ describe("CourseDetailsTable tests", () => {
     expect(
       screen.getByTestId(`${testId}-cell-row-0-col-days`),
     ).toHaveTextContent("");
+  });
+
+  test("displays A for a summer session A course", () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <CourseDetailsTable
+            details={[courseDetailsSessionFixtures.summerA]}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const sessionCell = screen.getByTestId(`${testId}-cell-row-0-col-session`);
+
+    expect(sessionCell.textContent).toBe("A");
+  });
+
+  test("displays B for a summer session B course", () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <CourseDetailsTable
+            details={[courseDetailsSessionFixtures.summerB]}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const sessionCell = screen.getByTestId(`${testId}-cell-row-0-col-session`);
+
+    expect(sessionCell.textContent).toBe("B");
+  });
+
+  test("leaves Session blank for a non-summer course", () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <CourseDetailsTable
+            details={[courseDetailsSessionFixtures.fallWithSession]}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const sessionCell = screen.getByTestId(`${testId}-cell-row-0-col-session`);
+
+    expect(sessionCell.textContent).toBe("");
+  });
+
+  test("leaves Session blank when summer session information is missing", () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <CourseDetailsTable
+            details={[courseDetailsSessionFixtures.summerWithoutSession]}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const sessionCell = screen.getByTestId(`${testId}-cell-row-0-col-session`);
+
+    expect(sessionCell.textContent).toBe("");
   });
 });
