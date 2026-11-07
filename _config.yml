@@ -23,4 +23,4 @@ repo_name: "TBD"
 repo: ucsb-cs156-f26/proj-courses-f26-04
 owner: ucsb-cs156-f26
 repo_name: proj-courses-f26-04
-pull_requests: [{"author":{"id":"U_kgDOB8qFXg","is_bot":false,"login":"Haot1ngHuang","name":""},"headRefName":"hh/simplify-maven-logs","number":17,"title":"Suppress Maven transfer progress logs","url":"https://github.com/ucsb-cs156-f26/proj-courses-f26-04/pull/17"}]
+pull_requests: [{"author":{"id":"U_kgDOB8qFXg","is_bot":false,"login":"Haot1ngHuang","name":""},"headRefName":"hh/fix-schedule-name-validation","number":18,"title":"Allow personal schedule names up to 25 characters","url":"https://github.com/ucsb-cs156-f26/proj-courses-f26-04/pull/18"},{"author":{"id":"U_kgDOB8qFXg","is_bot":false,"login":"Haot1ngHuang","name":""},"headRefName":"hh/simplify-maven-logs","number":17,"title":"Suppress Maven transfer progress logs","url":"https://github.com/ucsb-cs156-f26/proj-courses-f26-04/pull/17"}]
