@@ -1,0 +1,19 @@
+{
+    "databaseChangeLog": [
+        {
+            "changeSet": {
+                "id": "011-add-unique-email-constraint",
+                "author": "jonathan-m-lo",
+                "changes": [
+                    {
+                        "addUniqueConstraint": {
+                            "tableName": "users",
+                            "columnNames": "email",
+                            "constraintName": "uk_users_email"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
