@@ -142,10 +142,18 @@ public class UCSBCurriculumService {
    */
   public List<Primary> getPrimaries(String subjectArea, String quarter, String courseLevel)
       throws Exception {
+    return getCoursePage(subjectArea, quarter, courseLevel).getPrimaries();
+  }
+
+  /**
+   * Fetch and parse a page of course data once, so callers can use it both ways: as primaries for
+   * the response (getPrimaries()) and as converted sections for upserting into MongoDB
+   * (convertedSections()).
+   */
+  public CoursePage getCoursePage(String subjectArea, String quarter, String courseLevel)
+      throws Exception {
     String json = getJSON(subjectArea, quarter, courseLevel);
-    CoursePage coursePage = objectMapper.readValue(json, CoursePage.class);
-    List<Primary> result = coursePage.getPrimaries();
-    return result;
+    return objectMapper.readValue(json, CoursePage.class);
   }
 
   public String getJSONByGE(String quarter, String area) throws Exception {
@@ -178,10 +186,13 @@ public class UCSBCurriculumService {
   }
 
   public List<Primary> getPrimariesByGE(String quarter, String area) throws Exception {
+    return getCoursePageByGE(quarter, area).getPrimaries();
+  }
+
+  /** GE counterpart of {@link #getCoursePage}. */
+  public CoursePage getCoursePageByGE(String quarter, String area) throws Exception {
     String json = getJSONByGE(quarter, area);
-    CoursePage coursePage = objectMapper.readValue(json, CoursePage.class);
-    List<Primary> result = coursePage.getPrimaries();
-    return result;
+    return objectMapper.readValue(json, CoursePage.class);
   }
 
   public String getSectionJSON(String subjectArea, String quarter, String courseLevel)

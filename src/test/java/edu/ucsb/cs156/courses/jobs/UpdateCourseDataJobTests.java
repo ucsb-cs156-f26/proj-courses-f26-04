@@ -18,6 +18,7 @@ import edu.ucsb.cs156.courses.repositories.EnrollmentDataPointRepository;
 import edu.ucsb.cs156.courses.services.IsStaleService;
 import edu.ucsb.cs156.courses.services.UCSBAPIQuarterService;
 import edu.ucsb.cs156.courses.services.UCSBCurriculumService;
+import edu.ucsb.cs156.courses.services.UpdateCoursesService;
 import edu.ucsb.cs156.jobs.entities.Job;
 import edu.ucsb.cs156.jobs.errors.JobCancelledException;
 import edu.ucsb.cs156.jobs.repositories.JobsRepository;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -52,6 +54,10 @@ public class UpdateCourseDataJobTests {
 
   @Mock JobRateLimit jobRateLimit;
 
+  // A real service wired with the mocks above, so these tests still exercise the upsert loop
+  // (including its per-section cancellation checkpoint) through the job.
+  @InjectMocks UpdateCoursesService updateCoursesService;
+
   Job jobStarted = Job.builder().build();
   JobContext ctx = new JobContext(null, jobStarted);
 
@@ -64,13 +70,10 @@ public class UpdateCourseDataJobTests {
                 .end_quarterYYYYQ("20213")
                 .subjects(List.of("CMPSC", "MATH"))
                 .ucsbCurriculumService(ucsbCurriculumService)
-                .convertedSectionCollection(convertedSectionCollection)
-                .updateCollection(updateCollection)
                 .isStaleService(isStaleService)
                 .ifStale(false)
-                .enrollmentDataPointRepository(enrollmentDataPointRepository)
-                .ucsbapiQuarterService(ucsbapiQuarterService)
                 .jobRateLimit(jobRateLimit)
+                .updateCoursesService(updateCoursesService)
                 .build());
     doNothing().when(job).updateCourses(any(), any(), any());
 
@@ -112,13 +115,10 @@ public class UpdateCourseDataJobTests {
             "20211",
             List.of("CMPSC"),
             ucsbCurriculumService,
-            convertedSectionCollection,
-            updateCollection,
             isStaleService,
             false,
-            enrollmentDataPointRepository,
-            ucsbapiQuarterService,
-            jobRateLimit);
+            jobRateLimit,
+            updateCoursesService);
     job.accept(ctx);
 
     // Assert
@@ -178,13 +178,10 @@ public class UpdateCourseDataJobTests {
             "20211",
             List.of("MATH"),
             ucsbCurriculumService,
-            convertedSectionCollection,
-            updateCollection,
             isStaleService,
             false,
-            enrollmentDataPointRepository,
-            ucsbapiQuarterService,
-            jobRateLimit);
+            jobRateLimit,
+            updateCoursesService);
     job.accept(ctx);
 
     // Assert
@@ -237,13 +234,10 @@ public class UpdateCourseDataJobTests {
             "20211",
             List.of("MATH"),
             ucsbCurriculumService,
-            convertedSectionCollection,
-            updateCollection,
             isStaleService,
             false,
-            enrollmentDataPointRepository,
-            ucsbapiQuarterService,
-            jobRateLimit);
+            jobRateLimit,
+            updateCoursesService);
     job.accept(ctx);
 
     // Assert
@@ -291,7 +285,7 @@ public class UpdateCourseDataJobTests {
     when(ucsbapiQuarterService.isQuarterInRegistrationPass(anyString())).thenReturn(false);
 
     LocalDateTime someTime = LocalDateTime.parse("2022-03-05T15:50:10");
-    Update update = new Update(null, "MATH", "20211", 0, 1, 1, someTime);
+    Update update = new Update(null, "MATH", "20211", 0, 1, 0, someTime);
     when(updateCollection.save(any())).thenReturn(update);
 
     // Act
@@ -301,13 +295,10 @@ public class UpdateCourseDataJobTests {
             "20211",
             List.of("MATH"),
             ucsbCurriculumService,
-            convertedSectionCollection,
-            updateCollection,
             isStaleService,
             false,
-            enrollmentDataPointRepository,
-            ucsbapiQuarterService,
-            jobRateLimit);
+            jobRateLimit,
+            updateCoursesService);
     job.accept(ctx);
 
     // Assert
@@ -317,7 +308,7 @@ public class UpdateCourseDataJobTests {
                 Updating courses from 20211 to 20211 for 1 subjects
                 Updating courses for [MATH 20211]
                 0 new sections saved, 1 sections updated, 0 errors, last update: 2022-03-05T15:50:10
-                Saved update: Update(_id=null, subjectArea=MATH, quarter=20211, saved=0, updated=1, errors=1, lastUpdate=2022-03-05T15:50:10)
+                Saved update: Update(_id=null, subjectArea=MATH, quarter=20211, saved=0, updated=1, errors=0, lastUpdate=2022-03-05T15:50:10)
                 Finished updating courses""";
 
     assertEquals(expected, jobStarted.getLog());
@@ -325,6 +316,7 @@ public class UpdateCourseDataJobTests {
     verify(convertedSectionCollection, times(1))
         .findOneByQuarterAndEnrollCode(eq(quarter), eq(enrollCode));
     verify(convertedSectionCollection, times(1)).save(updatedSection);
+    verify(updateCollection, times(1)).save(new Update(null, "MATH", "20211", 0, 1, 0, null));
   }
 
   @Test
@@ -361,7 +353,7 @@ public class UpdateCourseDataJobTests {
     when(ucsbapiQuarterService.isQuarterInRegistrationPass(eq("20211"))).thenReturn(true);
 
     LocalDateTime someTime = LocalDateTime.parse("2022-03-05T15:50:10");
-    Update update = new Update(null, "MATH", "20211", 0, 1, 1, someTime);
+    Update update = new Update(null, "MATH", "20211", 0, 1, 0, someTime);
     when(updateCollection.save(any())).thenReturn(update);
 
     EnrollmentDataPoint edp = updatedSection.getEnrollmentDataPoint();
@@ -374,13 +366,10 @@ public class UpdateCourseDataJobTests {
             "20211",
             List.of("MATH"),
             ucsbCurriculumService,
-            convertedSectionCollection,
-            updateCollection,
             isStaleService,
             true,
-            enrollmentDataPointRepository,
-            ucsbapiQuarterService,
-            jobRateLimit);
+            jobRateLimit,
+            updateCoursesService);
     job.accept(ctx);
 
     // Assert
@@ -390,7 +379,7 @@ public class UpdateCourseDataJobTests {
                 Updating courses from 20211 to 20211 for 1 subjects
                 Updating courses for [MATH 20211]
                 0 new sections saved, 1 sections updated, 0 errors, last update: 2022-03-05T15:50:10
-                Saved update: Update(_id=null, subjectArea=MATH, quarter=20211, saved=0, updated=1, errors=1, lastUpdate=2022-03-05T15:50:10)
+                Saved update: Update(_id=null, subjectArea=MATH, quarter=20211, saved=0, updated=1, errors=0, lastUpdate=2022-03-05T15:50:10)
                 Finished updating courses""";
 
     assertEquals(expected, jobStarted.getLog());
@@ -398,6 +387,7 @@ public class UpdateCourseDataJobTests {
     verify(convertedSectionCollection, times(1))
         .findOneByQuarterAndEnrollCode(eq(quarter), eq(enrollCode));
     verify(convertedSectionCollection, times(1)).save(updatedSection);
+    verify(updateCollection, times(1)).save(new Update(null, "MATH", "20211", 0, 1, 0, null));
     verify(enrollmentDataPointRepository, times(1)).save(eq(edp));
   }
 
@@ -415,13 +405,10 @@ public class UpdateCourseDataJobTests {
             "20211",
             List.of("MATH"),
             ucsbCurriculumService,
-            convertedSectionCollection,
-            updateCollection,
             isStaleService,
             true,
-            enrollmentDataPointRepository,
-            ucsbapiQuarterService,
-            jobRateLimit);
+            jobRateLimit,
+            updateCoursesService);
     job.accept(ctx);
   }
 
@@ -461,13 +448,10 @@ public class UpdateCourseDataJobTests {
             .end_quarterYYYYQ("20211")
             .subjects(List.of("CMPSC"))
             .ucsbCurriculumService(ucsbCurriculumService)
-            .convertedSectionCollection(convertedSectionCollection)
-            .updateCollection(updateCollection)
             .isStaleService(isStaleService)
             .ifStale(false)
-            .enrollmentDataPointRepository(enrollmentDataPointRepository)
-            .ucsbapiQuarterService(ucsbapiQuarterService)
             .jobRateLimit(jobRateLimit)
+            .updateCoursesService(updateCoursesService)
             .build();
 
     assertThrows(JobCancelledException.class, () -> updateCourseDataJob.accept(cancellingCtx));
@@ -505,13 +489,10 @@ public class UpdateCourseDataJobTests {
             .end_quarterYYYYQ("20211")
             .subjects(List.of("CMPSC"))
             .ucsbCurriculumService(ucsbCurriculumService)
-            .convertedSectionCollection(convertedSectionCollection)
-            .updateCollection(updateCollection)
             .isStaleService(isStaleService)
             .ifStale(false)
-            .enrollmentDataPointRepository(enrollmentDataPointRepository)
-            .ucsbapiQuarterService(ucsbapiQuarterService)
             .jobRateLimit(jobRateLimit)
+            .updateCoursesService(updateCoursesService)
             .build();
 
     assertThrows(JobCancelledException.class, () -> updateCourseDataJob.accept(cancellingCtx));
