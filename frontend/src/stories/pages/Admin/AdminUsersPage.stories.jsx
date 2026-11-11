@@ -29,6 +29,11 @@ Default.parameters = {
         },
       );
     }),
+    http.get("/api/admin/users/autocomplete", () => {
+      return HttpResponse.json(usersFixtures.threeUsers.slice(0, 2), {
+        status: 200,
+      });
+    }),
     http.get("/api/systemInfo", () => {
       return HttpResponse.json(systemInfoFixtures.showingBoth, {
         status: 200,
