@@ -7,6 +7,8 @@ import SingleLevelDropdown from "main/components/Levels/SingleLevelDropdown";
 import { useBackend } from "main/utils/useBackend";
 import { useSystemInfo } from "main/utils/systemInfo";
 import { quarterRange } from "main/utils/quarterUtilities";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 // Stryker disable all : testing specific hard-coded dropdown options is just writing the code twice
 const csvLevels = [
@@ -76,6 +78,20 @@ export default function CSVDownloadsPage({
   const [enrollmentQuarter, setEnrollmentQuarter] = useState(
     () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
   );
+
+  const handleEnrollmentSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.get("/api/enrollment/csv/quarter", {
+        params: { yyyyq: enrollmentQuarter },
+        responseType: "blob",
+      });
+    } catch (error) {
+      toast(`Error downloading enrollment CSV: ${error.message}`, {
+        type: "error",
+      });
+    }
+  };
 
   return (
     <BasicLayout>
@@ -180,7 +196,10 @@ export default function CSVDownloadsPage({
               <p>
                 Download enrollment data for all UCSB sections in a quarter.
               </p>
-              <Form>
+              <Form
+                onSubmit={handleEnrollmentSubmit}
+                data-testid="CSVDownloads.EnrollmentForm"
+              >
                 <div className="mb-3">
                   <SingleQuarterDropdown
                     quarters={quarters}
