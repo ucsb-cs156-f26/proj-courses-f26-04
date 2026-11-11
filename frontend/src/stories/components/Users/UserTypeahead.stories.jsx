@@ -52,28 +52,27 @@ const makeUser = (id, fullName, email) => ({
   admin: false,
 });
 
-const classUsers = [
-  makeUser(11, "Chris Gaucho", "cgaucho@ucsb.edu"),
-  makeUser(12, "Christina Lee", "clee@ucsb.edu"),
-  makeUser(13, "Chad Nguyen", "cnguyen@ucsb.edu"),
-  makeUser(14, "Charlie Brown", "cbrown@ucsb.edu"),
-  makeUser(15, "Michelle Tran", "mtran@ucsb.edu"),
-  makeUser(16, "Daniel Park", "dpark@ucsb.edu"),
-  makeUser(17, "Maria Lopez", "mlopez@ucsb.edu"),
+const similarNames = [
+  makeUser(11, "Charlie Tuna", "ctuna@ucsb.edu"),
+  makeUser(12, "Chris Gaucho", "cgaucho@ucsb.edu"),
+  makeUser(13, "Chris Taylor", "ctaylor@ucsb.edu"),
+  makeUser(14, "Christopher Reeves", "creeves@ucsb.edu"),
+  makeUser(15, "Christine Keener", "ckeener@ucsb.edu"),
 ];
 
 // The component working "just right": not too few matches, not too many,
-// not loading. Types "ch" automatically so the open list is visible, then
-// highlights the first suggestion with the keyboard.
-export const JustRight = Template.bind({});
-JustRight.args = {
-  allUsers: classUsers,
+// not loading. The seed names are all close to each other. The story types
+// "Chris" for you, which leaves four matches; keep typing " Gaucho" to narrow
+// it to one, or use the arrow keys and Enter to pick a row.
+export const Try_Chris_Gaucho = Template.bind({});
+Try_Chris_Gaucho.args = {
+  allUsers: similarNames,
 };
-JustRight.play = async ({ canvasElement }) => {
+Try_Chris_Gaucho.play = async ({ canvasElement }) => {
   const canvas = within(canvasElement);
-  await userEvent.type(canvas.getByRole("combobox"), "ch");
+  await userEvent.type(canvas.getByRole("combobox"), "Chris");
   const options = await canvas.findAllByRole("option");
-  await expect(options).toHaveLength(5);
+  await expect(options).toHaveLength(4);
   await userEvent.keyboard("{ArrowDown}");
   await expect(options[0]).toHaveAttribute("aria-selected", "true");
 };
