@@ -9,6 +9,16 @@ import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { allTheSubjects } from "fixtures/subjectFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
 
+const mockToast = vi.fn();
+vi.mock("react-toastify", async () => {
+  const originalModule = await vi.importActual("react-toastify");
+  return {
+    __esModule: true,
+    ...originalModule,
+    toast: (...params) => mockToast(...params),
+  };
+});
+
 describe("CSVDownloadsPage tests", () => {
   let axiosMock;
 
@@ -205,6 +215,15 @@ describe("CSVDownloadsPage tests", () => {
   });
 
   describe("enrollment downloads", () => {
+    beforeEach(() => {
+      mockToast.mockClear();
+    });
+
+    const enrollmentRequests = () =>
+      axiosMock.history.get.filter(
+        (r) => r.url === "/api/enrollment/csv/quarter",
+      );
+
     const openEnrollmentSection = async () => {
       fireEvent.click(
         await screen.findByRole("button", {
@@ -267,6 +286,38 @@ describe("CSVDownloadsPage tests", () => {
 
       expect(screen.getByTestId("CSVDownloads.EnrollmentQuarter")).toHaveValue(
         "20221",
+      );
+    });
+
+    test("requests enrollment CSV for the selected quarter from the backend", async () => {
+      axiosMock.onGet("/api/enrollment/csv/quarter").reply(200, "a,b\n");
+      const { assignMock, browserLocation } = mockLocationAssign();
+      renderPage(browserLocation);
+      await openEnrollmentSection();
+
+      fireEvent.change(screen.getByTestId("CSVDownloads.EnrollmentQuarter"), {
+        target: { value: "20242" },
+      });
+      fireEvent.submit(screen.getByTestId("CSVDownloads.EnrollmentForm"));
+
+      await waitFor(() => expect(enrollmentRequests()).toHaveLength(1));
+      expect(enrollmentRequests()[0].params).toEqual({ yyyyq: "20242" });
+      expect(enrollmentRequests()[0].responseType).toBe("blob");
+      expect(mockToast).not.toHaveBeenCalled();
+      expect(assignMock).not.toHaveBeenCalled();
+    });
+
+    test("shows an error toast when the enrollment request fails", async () => {
+      axiosMock.onGet("/api/enrollment/csv/quarter").reply(500);
+      renderPage();
+      await openEnrollmentSection();
+
+      fireEvent.submit(screen.getByTestId("CSVDownloads.EnrollmentForm"));
+
+      await waitFor(() => expect(mockToast).toHaveBeenCalledTimes(1));
+      expect(mockToast).toHaveBeenCalledWith(
+        "Error downloading enrollment CSV: Request failed with status code 500",
+        { type: "error" },
       );
     });
   });
