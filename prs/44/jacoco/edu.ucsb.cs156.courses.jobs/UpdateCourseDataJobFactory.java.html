@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UpdateCourseDataJobFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">courses</a> &gt; <a href="index.source.html" class="el_package">edu.ucsb.cs156.courses.jobs</a> &gt; <span class="el_source">UpdateCourseDataJobFactory.java</span></div><h1>UpdateCourseDataJobFactory.java</h1><pre class="source lang-java linenums">package edu.ucsb.cs156.courses.jobs;
+
+import edu.ucsb.cs156.courses.repositories.UCSBSubjectRepository;
+import edu.ucsb.cs156.courses.services.IsStaleService;
+import edu.ucsb.cs156.courses.services.UCSBCurriculumService;
+import edu.ucsb.cs156.courses.services.UpdateCoursesService;
+import edu.ucsb.cs156.jobs.services.JobRateLimit;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+<span class="fc" id="L15">@Slf4j</span>
+<span class="fc" id="L16">public class UpdateCourseDataJobFactory {</span>
+
+  @Autowired private UCSBCurriculumService curriculumService;
+
+  @Autowired private UCSBSubjectRepository subjectRepository;
+
+  @Autowired private IsStaleService isStaleService;
+
+  @Autowired private JobRateLimit jobRateLimit;
+
+  @Autowired private UpdateCoursesService updateCoursesService;
+
+  public UpdateCourseDataJob createForSubjectAndQuarterAndIfStale(
+      String subjectArea, String quarterYYYYQ, boolean ifStale) {
+<span class="fc" id="L30">    return new UpdateCourseDataJob(</span>
+        quarterYYYYQ,
+        quarterYYYYQ,
+<span class="fc" id="L33">        List.of(subjectArea),</span>
+        curriculumService,
+        isStaleService,
+        ifStale,
+        jobRateLimit,
+        updateCoursesService);
+  }
+
+  public UpdateCourseDataJob createForSubjectAndQuarterRange(
+      String subjectArea, String start_quarterYYYYQ, String end_quarterYYYYQ, boolean ifStale) {
+<span class="fc" id="L43">    return new UpdateCourseDataJob(</span>
+        start_quarterYYYYQ,
+        end_quarterYYYYQ,
+<span class="fc" id="L46">        List.of(subjectArea),</span>
+        curriculumService,
+        isStaleService,
+        ifStale,
+        jobRateLimit,
+        updateCoursesService);
+  }
+
+  private List&lt;String&gt; getAllSubjectCodes() {
+<span class="fc" id="L55">    var subjects = subjectRepository.findAll();</span>
+<span class="fc" id="L56">    var subjectCodes = new ArrayList&lt;String&gt;();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">    for (var subject : subjects) {</span>
+<span class="fc" id="L58">      subjectCodes.add(subject.getSubjectCode());</span>
+<span class="fc" id="L59">    }</span>
+<span class="fc" id="L60">    return subjectCodes;</span>
+  }
+
+  public UpdateCourseDataJob createForQuarter(String quarterYYYYQ, boolean ifStale) {
+<span class="fc" id="L64">    return new UpdateCourseDataJob(</span>
+        quarterYYYYQ,
+        quarterYYYYQ,
+<span class="fc" id="L67">        getAllSubjectCodes(),</span>
+        curriculumService,
+        isStaleService,
+        ifStale,
+        jobRateLimit,
+        updateCoursesService);
+  }
+
+  public UpdateCourseDataJob createForQuarterRange(
+      String start_quarterYYYYQ, String end_quarterYYYYQ, boolean ifStale) {
+<span class="fc" id="L77">    return new UpdateCourseDataJob(</span>
+        start_quarterYYYYQ,
+        end_quarterYYYYQ,
+<span class="fc" id="L80">        getAllSubjectCodes(),</span>
+        curriculumService,
+        isStaleService,
+        ifStale,
+        jobRateLimit,
+        updateCoursesService);
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
