@@ -83,7 +83,7 @@ describe("CSVDownloadsPage tests", () => {
   test("uses dropdowns for quarters, subject area, and course level", async () => {
     renderPage();
 
-    expect(await screen.findAllByLabelText("Quarter")).toHaveLength(2);
+    expect(await screen.findAllByLabelText("Quarter")).toHaveLength(3);
     const subjectAreaDropdown = screen.getByLabelText("Subject Area");
     const levelDropdown = screen.getByLabelText("Course Level");
     expect(subjectAreaDropdown).toBeInTheDocument();
@@ -222,6 +222,23 @@ describe("CSVDownloadsPage tests", () => {
           "Download enrollment data for all UCSB sections in a quarter.",
         ),
       ).toBeInTheDocument();
+    });
+
+    test("uses SingleQuarterDropdown to select an enrollment quarter", async () => {
+      renderPage();
+      await openEnrollmentSection();
+
+      const dropdown = screen.getByTestId("CSVDownloads.EnrollmentQuarter");
+      expect(dropdown).toBeInTheDocument();
+      expect(
+        screen.getByTestId("CSVDownloads.EnrollmentQuarter-option-0"),
+      ).toBeInTheDocument();
+
+      fireEvent.change(dropdown, { target: { value: "20242" } });
+      expect(dropdown).toHaveValue("20242");
+      expect(localStorage.getItem("CSVDownloads.EnrollmentQuarter")).toBe(
+        "20242",
+      );
     });
   });
 
