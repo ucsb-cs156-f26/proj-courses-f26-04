@@ -69,6 +69,8 @@ export default function CSVDownloadsPage({
     downloadCsv(byQuarterAndSubjectUrl);
   };
 
+  const [enrollmentQuarter, setEnrollmentQuarter] = useState(quarters[0].yyyyq);
+
   return (
     <BasicLayout>
       <div className="container mt-3">
@@ -172,6 +174,16 @@ export default function CSVDownloadsPage({
               <p>
                 Download enrollment data for all UCSB sections in a quarter.
               </p>
+              <Form>
+                <div className="mb-3">
+                  <SingleQuarterDropdown
+                    quarters={quarters}
+                    quarter={enrollmentQuarter}
+                    setQuarter={setEnrollmentQuarter}
+                    controlId="CSVDownloads.EnrollmentQuarter"
+                  />
+                </div>
+              </Form>
             </Accordion.Body>
           </Accordion.Item>
         </Accordion>
