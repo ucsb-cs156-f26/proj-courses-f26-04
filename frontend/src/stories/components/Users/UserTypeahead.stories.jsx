@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { expect, userEvent, within } from "storybook/test";
 
 import UserTypeahead from "main/components/Users/UserTypeahead";
 import usersFixtures from "fixtures/usersFixtures";
@@ -42,6 +43,40 @@ const Template = ({ allUsers = usersFixtures.threeUsers, ...args }) => {
 
 export const Default = Template.bind({});
 Default.args = {};
+
+const makeUser = (id, fullName, email) => ({
+  ...usersFixtures.threeUsers[0],
+  id,
+  fullName,
+  email,
+  admin: false,
+});
+
+const classUsers = [
+  makeUser(11, "Chris Gaucho", "cgaucho@ucsb.edu"),
+  makeUser(12, "Christina Lee", "clee@ucsb.edu"),
+  makeUser(13, "Chad Nguyen", "cnguyen@ucsb.edu"),
+  makeUser(14, "Charlie Brown", "cbrown@ucsb.edu"),
+  makeUser(15, "Michelle Tran", "mtran@ucsb.edu"),
+  makeUser(16, "Daniel Park", "dpark@ucsb.edu"),
+  makeUser(17, "Maria Lopez", "mlopez@ucsb.edu"),
+];
+
+// The component working "just right": not too few matches, not too many,
+// not loading. Types "ch" automatically so the open list is visible, then
+// highlights the first suggestion with the keyboard.
+export const JustRight = Template.bind({});
+JustRight.args = {
+  allUsers: classUsers,
+};
+JustRight.play = async ({ canvasElement }) => {
+  const canvas = within(canvasElement);
+  await userEvent.type(canvas.getByRole("combobox"), "ch");
+  const options = await canvas.findAllByRole("option");
+  await expect(options).toHaveLength(5);
+  await userEvent.keyboard("{ArrowDown}");
+  await expect(options[0]).toHaveAttribute("aria-selected", "true");
+};
 
 export const NoMatches = Template.bind({});
 NoMatches.args = {
