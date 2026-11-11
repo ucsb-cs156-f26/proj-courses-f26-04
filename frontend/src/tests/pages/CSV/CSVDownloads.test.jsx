@@ -204,6 +204,27 @@ describe("CSVDownloadsPage tests", () => {
     );
   });
 
+  describe("enrollment downloads", () => {
+    const openEnrollmentSection = async () => {
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Download enrollment data by Quarter",
+        }),
+      );
+    };
+
+    test("renders enrollment downloads section", async () => {
+      renderPage();
+      await openEnrollmentSection();
+
+      expect(
+        screen.getByText(
+          "Download enrollment data for all UCSB sections in a quarter.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
   test("uses default quarter range when systemInfo has no quarter data", async () => {
     axiosMock.onGet("/api/systemInfo").reply(200, {});
     renderPage();

@@ -162,6 +162,18 @@ export default function CSVDownloadsPage({
               </Form>
             </Accordion.Body>
           </Accordion.Item>
+
+          {/* Download Enrollment Data by Quarter */}
+          <Accordion.Item eventKey="enrollment-by-quarter">
+            <Accordion.Header>
+              Download enrollment data by Quarter
+            </Accordion.Header>
+            <Accordion.Body>
+              <p>
+                Download enrollment data for all UCSB sections in a quarter.
+              </p>
+            </Accordion.Body>
+          </Accordion.Item>
         </Accordion>
       </div>
     </BasicLayout>
