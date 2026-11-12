@@ -6,7 +6,8 @@
             "name":        "web check",
             "description": "Checking if the web server is up",
             "path":        "/",
-            "attempts": 3
+            "attempts": 12,
+            "wait": 5
         }
     ]
   }
