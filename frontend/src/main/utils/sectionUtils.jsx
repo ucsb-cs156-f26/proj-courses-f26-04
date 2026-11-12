@@ -119,7 +119,7 @@ export const formatInfoLink = (row) =>
 
 export const renderInfoLink = (row, testid) => (
   <p className="text-center">
-    <a
+    <Link
       to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-info-link`}
       target={"_blank"}
@@ -127,20 +127,20 @@ export const renderInfoLink = (row, testid) => (
       style={{ color: "black", backgroundColor: "inherit" }}
     >
       <FontAwesomeIcon icon={faInfoCircle} />
-    </a>
+    </Link>
   </p>
 );
 
 export const renderDetailPageLink = (row, testid) => (
   <p className="text-center">
-    <a
+    <Link
       to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-detail-link`}
       target={"_blank"}
       rel="noopener noreferrer"
     >
       {row.original.courseId}
-    </a>
+    </Link>
   </p>
 );
 
