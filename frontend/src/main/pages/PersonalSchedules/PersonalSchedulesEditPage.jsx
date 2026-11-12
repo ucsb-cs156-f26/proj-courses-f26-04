@@ -8,7 +8,12 @@ import { toast } from "react-toastify";
 export default function PersonalSchedulesEditPage() {
   const createButton = () => {
     return (
-      <Button variant="primary" as={Link} to="/personalschedules/list" style={{}}>
+      <Button
+        variant="primary"
+        as={Link}
+        to="/personalschedules/list"
+        style={{}}
+      >
         Back
       </Button>
     );

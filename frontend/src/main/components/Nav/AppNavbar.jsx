@@ -86,7 +86,11 @@ export default function AppNavbar({
                   Personal Schedules
                 </Nav.Link>
               )}
-              <Nav.Link as={Link} to="/" data-testid="appnavbar-mainsearch-list">
+              <Nav.Link
+                as={Link}
+                to="/"
+                data-testid="appnavbar-mainsearch-list"
+              >
                 Main Search
               </Nav.Link>
             </Nav>
@@ -196,7 +200,11 @@ export default function AppNavbar({
             </Nav>
 
             <Nav className="ml-auto">
-              <Nav.Link as={Link} to="/downloads" data-testid="appnavbar-downloads">
+              <Nav.Link
+                as={Link}
+                to="/downloads"
+                data-testid="appnavbar-downloads"
+              >
                 Downloads
               </Nav.Link>
               {currentUser && currentUser.loggedIn ? (
