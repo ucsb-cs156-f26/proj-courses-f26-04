@@ -1,6 +1,7 @@
 import { hhmmTohhmma, convertToTimeRange } from "main/utils/timeUtils.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
 
 export const convertToFraction = (en1, en2) => {
   return en1 != null && en2 != null ? `${en1}/${en2}` : "";
@@ -119,7 +120,8 @@ export const formatInfoLink = (row) =>
 export const renderInfoLink = (row, testid) => (
   <p className="text-center">
     <a
-      href={formatInfoLink(row)}
+      as={Link}
+      to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-info-link`}
       target={"_blank"}
       rel="noopener noreferrer"
@@ -133,7 +135,8 @@ export const renderInfoLink = (row, testid) => (
 export const renderDetailPageLink = (row, testid) => (
   <p className="text-center">
     <a
-      href={formatInfoLink(row)}
+      as={Link}
+      to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-detail-link`}
       target={"_blank"}
       rel="noopener noreferrer"
