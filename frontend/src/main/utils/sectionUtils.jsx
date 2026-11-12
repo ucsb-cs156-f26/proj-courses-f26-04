@@ -120,7 +120,6 @@ export const formatInfoLink = (row) =>
 export const renderInfoLink = (row, testid) => (
   <p className="text-center">
     <a
-      as={Link}
       to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-info-link`}
       target={"_blank"}
@@ -135,7 +134,6 @@ export const renderInfoLink = (row, testid) => (
 export const renderDetailPageLink = (row, testid) => (
   <p className="text-center">
     <a
-      as={Link}
       to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-detail-link`}
       target={"_blank"}
