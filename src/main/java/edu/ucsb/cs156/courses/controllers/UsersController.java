@@ -36,6 +36,30 @@ public class UsersController extends ApiController {
     return ResponseEntity.ok().body(body);
   }
 
+  public static final int AUTOCOMPLETE_MIN_CHARS = 2;
+  // One more than the frontend's maxSuggestions (10), so the UI can tell
+  // "exactly 10 matches" apart from "more than 10 matches".
+  public static final int AUTOCOMPLETE_MAX_RESULTS = 11;
+
+  @Operation(summary = "Autocomplete users by name or email (case-insensitive substring match)")
+  @PreAuthorize("hasRole('ROLE_ADMIN')")
+  @GetMapping("/autocomplete")
+  public List<User> autocomplete(
+      @Parameter(
+              name = "q",
+              description = "text to look for in the user's full name or email",
+              example = "ph",
+              required = true)
+          @RequestParam
+          String q) {
+    String trimmed = q.trim();
+    if (trimmed.length() < AUTOCOMPLETE_MIN_CHARS) {
+      return List.of();
+    }
+    return userRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+        trimmed, trimmed, PageRequest.of(0, AUTOCOMPLETE_MAX_RESULTS));
+  }
+
   @Operation(summary = "Get a list of all users with pages")
   @PreAuthorize("hasRole('ROLE_ADMIN')")
   @GetMapping(params = {"page", "pageSize", "sortField", "sortDirection"})

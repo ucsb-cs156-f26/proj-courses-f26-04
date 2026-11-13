@@ -180,11 +180,37 @@ describe("PersonalScheduleForm tests", () => {
     expect(quarter).toHaveValue("20211");
   });
 
-  test("Shows error message when name exceeds maximum length", async () => {
+  test.each([16, 25])("Accepts a name with %i characters", async (length) => {
+    const mockSubmitAction = vi.fn();
+    const scheduleName = "A".repeat(length);
+
     render(
       <QueryClientProvider client={queryClient}>
         <Router>
-          <PersonalScheduleForm />
+          <PersonalScheduleForm submitAction={mockSubmitAction} />
+        </Router>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.change(screen.getByTestId("PersonalScheduleForm-name"), {
+      target: { value: scheduleName },
+    });
+    fireEvent.click(screen.getByTestId("PersonalScheduleForm-submit"));
+
+    await waitFor(() => expect(mockSubmitAction).toHaveBeenCalledTimes(1));
+    expect(mockSubmitAction.mock.calls[0][0].name).toBe(scheduleName);
+    expect(
+      screen.queryByText("Max length 25 characters"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("Rejects a name with 26 characters and shows a validation error", async () => {
+    const mockSubmitAction = vi.fn();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <PersonalScheduleForm submitAction={mockSubmitAction} />
         </Router>
       </QueryClientProvider>,
     );
@@ -192,12 +218,13 @@ describe("PersonalScheduleForm tests", () => {
     const nameInput = screen.getByTestId("PersonalScheduleForm-name");
     const submitButton = screen.getByTestId("PersonalScheduleForm-submit");
 
-    fireEvent.change(nameInput, { target: { value: "ThisNameIsWayTooLong" } });
+    fireEvent.change(nameInput, { target: { value: "A".repeat(26) } });
     fireEvent.click(submitButton);
 
     expect(
-      await screen.findByText("Max length 15 characters"),
+      await screen.findByText("Max length 25 characters"),
     ).toBeInTheDocument();
+    expect(mockSubmitAction).not.toHaveBeenCalled();
   });
 
   test("Form has initialPersonalSchedule content with Fall quarter", async () => {
