@@ -32,7 +32,7 @@ public class UpdateCoursesService {
    *     or G), and GE searches span many subjects, so neither may mark a subject/quarter as loaded.
    * @return the Update summarizing this run; saved to the updates collection only when fromJob
    */
-  public Update upsert(
+  public synchronized Update upsert(
       List<ConvertedSection> convertedSections,
       JobContext ctx,
       String quarterYYYYQ,
@@ -78,10 +78,9 @@ public class UpdateCoursesService {
    * Fire-and-forget write-through for the live-API search endpoints. The caller returns
    * immediately, so the user's search response is never delayed by Mongo writes.
    *
-   * <p>Runs on lib-jobs' "jobsExecutor" (@EnableAsync is also provided by lib-jobs). That pool is
-   * single-threaded, so this upsert may wait in the queue behind a running UpdateCourseDataJob;
-   * that's acceptable for a best-effort cache fill, and it means upserts never run concurrently
-   * with each other.
+   * <p>Runs on lib-jobs' "jobsExecutor" (@EnableAsync is also provided by lib-jobs). That pool has
+   * 2 threads, so this can overlap a job or another search; upsert() is synchronized so the
+   * find-then-save can't insert duplicate sections. Waiting on that lock is fine for a cache fill.
    *
    * <p>Must be called from another bean: Spring applies @Async through a proxy, so a call from
    * inside this class would run synchronously.
