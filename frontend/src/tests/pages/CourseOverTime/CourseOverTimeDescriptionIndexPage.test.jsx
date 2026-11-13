@@ -95,4 +95,72 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
 
     expect(screen.getByText("COMP ENGR SEMINAR")).toBeInTheDocument();
   });
+
+  const renderPage = () =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <CourseOverTimeDescriptionIndexPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+  const submitSearch = async () => {
+    await userEvent.type(screen.getByLabelText("Search Terms"), "data");
+    await userEvent.click(screen.getByText("Submit"));
+  };
+
+  const noCoursesMessage = "No courses were found with the specified criteria.";
+
+  test("shows no feedback and no table before the first search", async () => {
+    renderPage();
+
+    expect(screen.queryByText(noCoursesMessage)).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading courses...")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("ConvertedSectionTable"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the no courses message when the search returns no courses", async () => {
+    axiosMock.onGet("/api/public/description/search").reply(200, []);
+    renderPage();
+
+    await submitSearch();
+
+    expect(await screen.findByText(noCoursesMessage)).toBeInTheDocument();
+    expect(screen.queryByText("Loading courses...")).not.toBeInTheDocument();
+  });
+
+  test("shows a loading message and no other feedback while searching", async () => {
+    let finishSearch;
+    axiosMock.onGet("/api/public/description/search").reply(
+      () =>
+        new Promise((resolve) => {
+          finishSearch = () => resolve([200, []]);
+        }),
+    );
+    renderPage();
+
+    await submitSearch();
+
+    expect(await screen.findByText("Loading courses...")).toBeInTheDocument();
+    expect(screen.queryByText(noCoursesMessage)).not.toBeInTheDocument();
+
+    finishSearch();
+
+    expect(await screen.findByText(noCoursesMessage)).toBeInTheDocument();
+    expect(screen.queryByText("Loading courses...")).not.toBeInTheDocument();
+  });
+
+  test("shows the results and no message when the search returns courses", async () => {
+    axiosMock.onGet("/api/public/description/search").reply(200, threeSections);
+    renderPage();
+
+    await submitSearch();
+
+    expect(await screen.findByText("COMP ENGR SEMINAR")).toBeInTheDocument();
+    expect(screen.queryByText(noCoursesMessage)).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading courses...")).not.toBeInTheDocument();
+  });
 });

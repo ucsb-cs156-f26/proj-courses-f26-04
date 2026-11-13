@@ -6,6 +6,7 @@ import ConvertedSectionTable from "main/components/Common/ConvertedSectionTable"
 
 export default function CourseOverTimeDescriptionIndexPage() {
   const [courseJSON, setCourseJSON] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const objectToAxiosParams = (query) => ({
     url: "/api/public/description/search",
@@ -19,6 +20,7 @@ export default function CourseOverTimeDescriptionIndexPage() {
 
   const onSuccess = (courses) => {
     setCourseJSON(courses);
+    setHasSearched(true);
   };
 
   const mutation = useBackendMutation(objectToAxiosParams, { onSuccess }, []);
@@ -38,7 +40,17 @@ export default function CourseOverTimeDescriptionIndexPage() {
         <CourseOverTimeDescriptionSearchForm
           fetchJSON={fetchCourseOverTimeJSON}
         />
-        <ConvertedSectionTable sections={courseJSON} />
+        {mutation.isLoading && (
+          <div className="text-center">Loading courses...</div>
+        )}
+        {!mutation.isLoading && hasSearched && courseJSON.length === 0 && (
+          <div className="text-center mt-3">
+            <p>No courses were found with the specified criteria.</p>
+          </div>
+        )}
+        {!mutation.isLoading && courseJSON.length > 0 && (
+          <ConvertedSectionTable sections={courseJSON} />
+        )}
       </div>
     </BasicLayout>
   );
