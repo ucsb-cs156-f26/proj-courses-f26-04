@@ -215,8 +215,23 @@ describe("CSVDownloadsPage tests", () => {
   });
 
   describe("enrollment downloads", () => {
+    let createObjectURLMock;
+    let revokeObjectURLMock;
+    let clickSpy;
+
     beforeEach(() => {
       mockToast.mockClear();
+      createObjectURLMock = vi.fn(() => "blob:http://localhost/fake-url");
+      revokeObjectURLMock = vi.fn();
+      window.URL.createObjectURL = createObjectURLMock;
+      window.URL.revokeObjectURL = revokeObjectURLMock;
+      clickSpy = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      clickSpy.mockRestore();
     });
 
     const enrollmentRequests = () =>
@@ -300,7 +315,8 @@ describe("CSVDownloadsPage tests", () => {
       });
       fireEvent.submit(screen.getByTestId("CSVDownloads.EnrollmentForm"));
 
-      await waitFor(() => expect(enrollmentRequests()).toHaveLength(1));
+      await waitFor(() => expect(clickSpy).toHaveBeenCalledTimes(1));
+      expect(enrollmentRequests()).toHaveLength(1);
       expect(enrollmentRequests()[0].params).toEqual({ yyyyq: "20242" });
       expect(enrollmentRequests()[0].responseType).toBe("blob");
       expect(mockToast).not.toHaveBeenCalled();
@@ -319,6 +335,96 @@ describe("CSVDownloadsPage tests", () => {
         "Error downloading enrollment CSV: Request failed with status code 500",
         { type: "error" },
       );
+    });
+
+    describe("download button", () => {
+      test("renders the download button", async () => {
+        renderPage();
+        await openEnrollmentSection();
+
+        const button = screen.getByTestId(
+          "CSVDownloads.EnrollmentDownloadButton",
+        );
+        expect(button).toHaveTextContent("Download Enrollment CSV");
+        expect(button).toBeEnabled();
+        expect(button).toHaveAttribute("type", "submit");
+      });
+
+      test("clicking the button downloads the returned CSV file", async () => {
+        const csv = "yyyyq,enrollCd,enrollment\n20242,12345,100\n";
+        axiosMock.onGet("/api/enrollment/csv/quarter").reply(200, csv);
+        renderPage();
+        await openEnrollmentSection();
+
+        fireEvent.change(screen.getByTestId("CSVDownloads.EnrollmentQuarter"), {
+          target: { value: "20242" },
+        });
+        fireEvent.click(
+          screen.getByTestId("CSVDownloads.EnrollmentDownloadButton"),
+        );
+
+        await waitFor(() => expect(clickSpy).toHaveBeenCalledTimes(1));
+
+        expect(createObjectURLMock).toHaveBeenCalledTimes(1);
+        const blob = createObjectURLMock.mock.calls[0][0];
+        expect(blob).toBeInstanceOf(Blob);
+        expect(await blob.text()).toBe(csv);
+
+        const link = clickSpy.mock.contexts[0];
+        expect(link.href).toBe("blob:http://localhost/fake-url");
+        expect(link.download).toBe("enrollment_20242.csv");
+        expect(document.body.contains(link)).toBe(false);
+
+        expect(revokeObjectURLMock).toHaveBeenCalledWith(
+          "blob:http://localhost/fake-url",
+        );
+        expect(mockToast).not.toHaveBeenCalled();
+        expect(
+          screen.getByTestId("CSVDownloads.EnrollmentDownloadButton"),
+        ).toBeEnabled();
+      });
+
+      test("disables button and shows Downloading... while request is in flight", async () => {
+        let resolveRequest;
+        axiosMock.onGet("/api/enrollment/csv/quarter").reply(
+          () =>
+            new Promise((resolve) => {
+              resolveRequest = () => resolve([200, "a,b\n"]);
+            }),
+        );
+        renderPage();
+        await openEnrollmentSection();
+
+        const button = screen.getByTestId(
+          "CSVDownloads.EnrollmentDownloadButton",
+        );
+        fireEvent.click(button);
+
+        await waitFor(() => expect(button).toBeDisabled());
+        expect(button).toHaveTextContent("Downloading...");
+
+        resolveRequest();
+
+        await waitFor(() => expect(button).toBeEnabled());
+        expect(button).toHaveTextContent("Download Enrollment CSV");
+      });
+
+      test("re-enables the button and does not download when the request fails", async () => {
+        axiosMock.onGet("/api/enrollment/csv/quarter").reply(500);
+        renderPage();
+        await openEnrollmentSection();
+
+        const button = screen.getByTestId(
+          "CSVDownloads.EnrollmentDownloadButton",
+        );
+        fireEvent.click(button);
+
+        await waitFor(() => expect(mockToast).toHaveBeenCalledTimes(1));
+        expect(createObjectURLMock).not.toHaveBeenCalled();
+        expect(clickSpy).not.toHaveBeenCalled();
+        await waitFor(() => expect(button).toBeEnabled());
+        expect(button).toHaveTextContent("Download Enrollment CSV");
+      });
     });
   });
 

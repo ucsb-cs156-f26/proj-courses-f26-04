@@ -79,17 +79,30 @@ export default function CSVDownloadsPage({
     () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
   );
 
+  const [enrollmentDownloading, setEnrollmentDownloading] = useState(false);
+
   const handleEnrollmentSubmit = async (e) => {
     e.preventDefault();
+    setEnrollmentDownloading(true);
     try {
-      await axios.get("/api/enrollment/csv/quarter", {
+      const response = await axios.get("/api/enrollment/csv/quarter", {
         params: { yyyyq: enrollmentQuarter },
         responseType: "blob",
       });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `enrollment_${enrollmentQuarter}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       toast(`Error downloading enrollment CSV: ${error.message}`, {
         type: "error",
       });
+    } finally {
+      setEnrollmentDownloading(false);
     }
   };
 
@@ -208,6 +221,17 @@ export default function CSVDownloadsPage({
                     controlId={enrollmentQuarterControlId}
                   />
                 </div>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={enrollmentDownloading}
+                  data-testid="CSVDownloads.EnrollmentDownloadButton"
+                >
+                  {enrollmentDownloading
+                    ? "Downloading..."
+                    : "Download Enrollment CSV"}
+                </Button>
               </Form>
             </Accordion.Body>
           </Accordion.Item>
