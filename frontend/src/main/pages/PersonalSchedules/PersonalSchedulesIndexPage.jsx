@@ -1,6 +1,6 @@
 import React from "react";
 import { useBackend } from "main/utils/useBackend";
-
+import { Link } from "react-router-dom";
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
 import PersonalSchedulesTable from "main/components/PersonalSchedules/PersonalSchedulesTable";
 import { useCurrentUser } from "main/utils/currentUser";
@@ -21,7 +21,12 @@ export default function PersonalSchedulesIndexPage() {
   );
   const createButton = () => {
     return (
-      <Button variant="primary" href="/personalschedules/create" style={{}}>
+      <Button
+        variant="primary"
+        as={Link}
+        to="/personalschedules/create"
+        style={{}}
+      >
         Add New Personal Schedule
       </Button>
     );
