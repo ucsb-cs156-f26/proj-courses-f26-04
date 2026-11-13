@@ -83,7 +83,7 @@ describe("CSVDownloadsPage tests", () => {
   test("uses dropdowns for quarters, subject area, and course level", async () => {
     renderPage();
 
-    expect(await screen.findAllByLabelText("Quarter")).toHaveLength(2);
+    expect(await screen.findAllByLabelText("Quarter")).toHaveLength(3);
     const subjectAreaDropdown = screen.getByLabelText("Subject Area");
     const levelDropdown = screen.getByLabelText("Course Level");
     expect(subjectAreaDropdown).toBeInTheDocument();
@@ -222,6 +222,52 @@ describe("CSVDownloadsPage tests", () => {
           "Download enrollment data for all UCSB sections in a quarter.",
         ),
       ).toBeInTheDocument();
+    });
+
+    test("uses SingleQuarterDropdown to select an enrollment quarter", async () => {
+      renderPage();
+      await openEnrollmentSection();
+
+      const dropdown = screen.getByTestId("CSVDownloads.EnrollmentQuarter");
+      expect(dropdown).toBeInTheDocument();
+      expect(
+        screen.getByTestId("CSVDownloads.EnrollmentQuarter-option-0"),
+      ).toBeInTheDocument();
+
+      fireEvent.change(dropdown, { target: { value: "20242" } });
+      expect(dropdown).toHaveValue("20242");
+      expect(localStorage.getItem("CSVDownloads.EnrollmentQuarter")).toBe(
+        "20242",
+      );
+    });
+
+    test("restores the saved enrollment quarter from localStorage", async () => {
+      localStorage.setItem("CSVDownloads.EnrollmentQuarter", "20242");
+      renderPage();
+      await openEnrollmentSection();
+
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("CSVDownloads.EnrollmentQuarter"),
+        ).toHaveValue("20242"),
+      );
+    });
+
+    test("defaults the enrollment quarter to the first quarter when nothing is saved", async () => {
+      // Use the same range as the systemInfo placeholder data, so the
+      // quarters on the first render match the quarters after loading.
+      axiosMock.onGet("/api/systemInfo").reply(200, {
+        ...systemInfoFixtures.showingNeither,
+        startQtrYYYYQ: "20221",
+        endQtrYYYYQ: "20222",
+      });
+      expect(localStorage.getItem("CSVDownloads.EnrollmentQuarter")).toBeNull();
+      renderPage();
+      await openEnrollmentSection();
+
+      expect(screen.getByTestId("CSVDownloads.EnrollmentQuarter")).toHaveValue(
+        "20221",
+      );
     });
   });
 
