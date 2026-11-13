@@ -198,7 +198,11 @@ describe("AdminUsersPage tests", () => {
   describe("typeahead search", () => {
     const renderPage = () =>
       render(
-        <QueryClientProvider client={new QueryClient()}>
+        <QueryClientProvider
+          client={
+            new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          }
+        >
           <MemoryRouter>
             <AdminUsersPage />
           </MemoryRouter>
@@ -273,6 +277,22 @@ describe("AdminUsersPage tests", () => {
         screen.queryByTestId("AdminUsersPage-clear"),
       ).not.toBeInTheDocument();
       expect(screen.getByLabelText("Search by name or email")).toHaveValue("");
+    });
+
+    test("shows no matching users when the autocomplete request fails", async () => {
+      axiosMock.onGet("/api/admin/users/autocomplete").timeout();
+      const restoreConsole = mockConsole();
+      renderPage();
+      const user = userEvent.setup();
+      await screen.findByTestId("UsersTable-cell-row-0-col-id");
+
+      await user.type(screen.getByLabelText("Search by name or email"), "ph");
+
+      expect(await screen.findByText("No matching users")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("UserTypeahead-option-0"),
+      ).not.toBeInTheDocument();
+      restoreConsole();
     });
   });
 });

@@ -27,8 +27,7 @@ const AdminUsersPage = () => {
 
   const clearSelection = () => {
     setSelectedUser(null);
-    setQuery("");
-    setTypeaheadKey(typeaheadKey + 1); // remount to empty the input text
+    setTypeaheadKey(Date.now()); // new key: remounts the typeahead, emptying its input text
   };
 
   const { data: suggestions, isFetching: suggestionsLoading } = useBackend(
