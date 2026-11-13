@@ -240,6 +240,35 @@ describe("CSVDownloadsPage tests", () => {
         "20242",
       );
     });
+
+    test("restores the saved enrollment quarter from localStorage", async () => {
+      localStorage.setItem("CSVDownloads.EnrollmentQuarter", "20242");
+      renderPage();
+      await openEnrollmentSection();
+
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("CSVDownloads.EnrollmentQuarter"),
+        ).toHaveValue("20242"),
+      );
+    });
+
+    test("defaults the enrollment quarter to the first quarter when nothing is saved", async () => {
+      // Use the same range as the systemInfo placeholder data, so the
+      // quarters on the first render match the quarters after loading.
+      axiosMock.onGet("/api/systemInfo").reply(200, {
+        ...systemInfoFixtures.showingNeither,
+        startQtrYYYYQ: "20221",
+        endQtrYYYYQ: "20222",
+      });
+      expect(localStorage.getItem("CSVDownloads.EnrollmentQuarter")).toBeNull();
+      renderPage();
+      await openEnrollmentSection();
+
+      expect(screen.getByTestId("CSVDownloads.EnrollmentQuarter")).toHaveValue(
+        "20221",
+      );
+    });
   });
 
   test("uses default quarter range when systemInfo has no quarter data", async () => {

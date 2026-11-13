@@ -16,6 +16,8 @@ const csvLevels = [
 ];
 // Stryker restore all
 
+const enrollmentQuarterControlId = "CSVDownloads.EnrollmentQuarter";
+
 export default function CSVDownloadsPage({
   browserLocation = window.location,
 }) {
@@ -69,7 +71,11 @@ export default function CSVDownloadsPage({
     downloadCsv(byQuarterAndSubjectUrl);
   };
 
-  const [enrollmentQuarter, setEnrollmentQuarter] = useState(quarters[0].yyyyq);
+  // Start from the quarter saved in localStorage (if any), so the selection
+  // is restored after a page reload.
+  const [enrollmentQuarter, setEnrollmentQuarter] = useState(
+    () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
+  );
 
   return (
     <BasicLayout>
@@ -180,7 +186,7 @@ export default function CSVDownloadsPage({
                     quarters={quarters}
                     quarter={enrollmentQuarter}
                     setQuarter={setEnrollmentQuarter}
-                    controlId="CSVDownloads.EnrollmentQuarter"
+                    controlId={enrollmentQuarterControlId}
                   />
                 </div>
               </Form>
