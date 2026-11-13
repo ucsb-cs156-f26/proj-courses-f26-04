@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { Button } from "react-bootstrap";
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
 import UsersTable from "main/components/Users/UsersTable";
 import UsersSearchForm from "main/components/Users/UsersSearchForm";
+import UserTypeahead from "main/components/Users/UserTypeahead";
 
 import { useBackend } from "main/utils/useBackend";
 import OurPagination from "main/components/Utils/OurPagination";
@@ -17,6 +19,28 @@ const AdminUsersPage = () => {
   const [sortDirection, setSortDirection] = useLocalStorage(
     "UsersSearch.SortDirection",
     "ASC",
+  );
+
+  const [query, setQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [typeaheadKey, setTypeaheadKey] = useState(0);
+
+  const clearSelection = () => {
+    setSelectedUser(null);
+    setTypeaheadKey(Date.now()); // new key: remounts the typeahead, emptying its input text
+  };
+
+  const { data: suggestions, isFetching: suggestionsLoading } = useBackend(
+    // Stryker disable next-line all : don't test internal caching of React Query
+    ["/api/admin/users/autocomplete", query],
+    {
+      // Stryker disable next-line StringLiteral : GET is default, so replacing with "" is an equivalent mutation
+      method: "GET",
+      url: "/api/admin/users/autocomplete",
+      params: { q: query },
+    },
+    [],
+    { enabled: query.length >= 2 },
   );
 
   const {
@@ -48,11 +72,34 @@ const AdminUsersPage = () => {
         updateSortDirection={setSortDirection}
         updatePageSize={setPageSize}
       />
-      <OurPagination
-        updateActivePage={setSelectedPage}
-        totalPages={page.totalPages}
+      <UserTypeahead
+        key={typeaheadKey}
+        suggestions={suggestions}
+        isLoading={suggestionsLoading}
+        onInputChange={setQuery}
+        onSelect={setSelectedUser}
       />
-      <UsersTable users={page.content} />
+      {selectedUser ? (
+        <>
+          <Button
+            variant="secondary"
+            className="my-2"
+            data-testid="AdminUsersPage-clear"
+            onClick={clearSelection}
+          >
+            Show all users
+          </Button>
+          <UsersTable users={[selectedUser]} />
+        </>
+      ) : (
+        <>
+          <OurPagination
+            updateActivePage={setSelectedPage}
+            totalPages={page.totalPages}
+          />
+          <UsersTable users={page.content} />
+        </>
+      )}
     </BasicLayout>
   );
 };
