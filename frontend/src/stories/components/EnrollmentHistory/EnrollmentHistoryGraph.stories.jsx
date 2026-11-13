@@ -22,6 +22,7 @@ export const MultipleSectionsOverTime = Template.bind({});
 MultipleSectionsOverTime.args = {
   data: enrollmentDataPointFixtures.cmpsc130aMultipleSectionsOverTime,
   title: "CMPSC 130A Section Enrollment Over Time",
+  includeTotalEnrollment: true,
 };
 
 export const MultipleQuarters = Template.bind({});

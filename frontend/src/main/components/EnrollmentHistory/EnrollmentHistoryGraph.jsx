@@ -15,12 +15,17 @@ import {
   lineColors as defaultLineColors,
 } from "main/components/EnrollmentHistory/EnrollmentHistoryHelper";
 
+const totalEnrollmentLineColor = "#dc3545";
+
 const EnrollmentHistoryGraph = ({
   data = [],
   lineColors = defaultLineColors,
   title = "Enrollment History",
+  includeTotalEnrollment = false,
 }) => {
-  const { chartData, series } = createEnrollmentHistoryChartData(data);
+  const { chartData, series } = createEnrollmentHistoryChartData(data, {
+    includeTotalEnrollment,
+  });
 
   return (
     <div data-testid="enrollment-history-graph">
@@ -48,7 +53,11 @@ const EnrollmentHistoryGraph = ({
               key={line.dataKey}
               dataKey={line.dataKey}
               name={line.name}
-              stroke={lineColors[index % lineColors.length]}
+              stroke={
+                line.dataKey === "totalEnrollment"
+                  ? totalEnrollmentLineColor
+                  : lineColors[index % lineColors.length]
+              }
               strokeWidth={2}
               dot
               connectNulls
