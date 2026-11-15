@@ -1,3 +1,7 @@
+import {
+  summerSessionSections,
+  nonSummerSessionSections,
+} from "fixtures/courseOverTimeSessionFixtures";
 import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -26,6 +30,7 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
   const axiosMock = new AxiosMockAdapter(axios);
 
   beforeEach(() => {
+    localStorage.clear();
     axiosMock.resetHistory();
     axiosMock
       .onGet("/api/currentUser")
@@ -36,6 +41,40 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
   });
 
   const queryClient = new QueryClient();
+  test("displays summer sessions and leaves non-summer Session cells blank", async () => {
+    const expectedSessions = ["A", "B", "", ""];
+    axiosMock
+      .onGet("/api/public/description/search")
+      .reply(200, [...summerSessionSections, ...nonSummerSessionSections]);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <CourseOverTimeDescriptionIndexPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await userEvent.selectOptions(
+      await screen.findByLabelText("Start Quarter"),
+      "20213",
+    );
+    await userEvent.selectOptions(
+      screen.getByLabelText("End Quarter"),
+      "20214",
+    );
+    await userEvent.type(screen.getByLabelText("Search Terms"), "computer");
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    expect(
+      await screen.findByRole("columnheader", { name: "Session" }),
+    ).toBeInTheDocument();
+    for (const [index, expected] of expectedSessions.entries()) {
+      const cell = await screen.findByTestId(
+        `ConvertedSectionTable-cell-row-${index}-col-session`,
+      );
+      expect(cell.textContent).toBe(expected);
+    }
+  });
+
   test("renders without crashing", () => {
     render(
       <QueryClientProvider client={queryClient}>
