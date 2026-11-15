@@ -1,6 +1,7 @@
 package edu.ucsb.cs156.courses.repositories;
 
 import edu.ucsb.cs156.courses.entities.User;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,4 +13,7 @@ public interface UserRepository extends CrudRepository<User, Long> {
   Optional<User> findByEmail(String email);
 
   Page<User> findAll(Pageable pageable);
+
+  List<User> findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+      String fullName, String email, Pageable pageable);
 }
