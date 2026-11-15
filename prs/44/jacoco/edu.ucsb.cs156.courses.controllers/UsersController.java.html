@@ -36,6 +36,30 @@ import org.springframework.web.bind.annotation.RestController;
 <span class="fc" id="L36">    return ResponseEntity.ok().body(body);</span>
   }
 
+  public static final int AUTOCOMPLETE_MIN_CHARS = 2;
+  // One more than the frontend's maxSuggestions (10), so the UI can tell
+  // &quot;exactly 10 matches&quot; apart from &quot;more than 10 matches&quot;.
+  public static final int AUTOCOMPLETE_MAX_RESULTS = 11;
+
+  @Operation(summary = &quot;Autocomplete users by name or email (case-insensitive substring match)&quot;)
+  @PreAuthorize(&quot;hasRole('ROLE_ADMIN')&quot;)
+  @GetMapping(&quot;/autocomplete&quot;)
+  public List&lt;User&gt; autocomplete(
+      @Parameter(
+              name = &quot;q&quot;,
+              description = &quot;text to look for in the user's full name or email&quot;,
+              example = &quot;ph&quot;,
+              required = true)
+          @RequestParam
+          String q) {
+<span class="fc" id="L55">    String trimmed = q.trim();</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    if (trimmed.length() &lt; AUTOCOMPLETE_MIN_CHARS) {</span>
+<span class="fc" id="L57">      return List.of();</span>
+    }
+<span class="fc" id="L59">    return userRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(</span>
+<span class="fc" id="L60">        trimmed, trimmed, PageRequest.of(0, AUTOCOMPLETE_MAX_RESULTS));</span>
+  }
+
   @Operation(summary = &quot;Get a list of all users with pages&quot;)
   @PreAuthorize(&quot;hasRole('ROLE_ADMIN')&quot;)
   @GetMapping(params = {&quot;page&quot;, &quot;pageSize&quot;, &quot;sortField&quot;, &quot;sortDirection&quot;})
@@ -69,30 +93,30 @@ import org.springframework.web.bind.annotation.RestController;
           @RequestParam
           String sortDirection)
       throws JsonProcessingException {
-<span class="fc" id="L72">    List&lt;String&gt; allowedSortFields = Arrays.asList(&quot;givenName&quot;, &quot;familyName&quot;, &quot;email&quot;);</span>
-<span class="fc bfc" id="L73" title="All 2 branches covered.">    if (!allowedSortFields.contains(sortField)) {</span>
-<span class="fc" id="L74">      throw new IllegalArgumentException(</span>
-<span class="fc" id="L75">          String.format(</span>
+<span class="fc" id="L96">    List&lt;String&gt; allowedSortFields = Arrays.asList(&quot;givenName&quot;, &quot;familyName&quot;, &quot;email&quot;);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">    if (!allowedSortFields.contains(sortField)) {</span>
+<span class="fc" id="L98">      throw new IllegalArgumentException(</span>
+<span class="fc" id="L99">          String.format(</span>
               &quot;%s is not a valid sort field.  Valid values are %s&quot;, sortField, allowedSortFields));
     }
 
-<span class="fc" id="L79">    List&lt;String&gt; allowedSortDirections = Arrays.asList(&quot;ASC&quot;, &quot;DESC&quot;);</span>
-<span class="fc bfc" id="L80" title="All 2 branches covered.">    if (!allowedSortDirections.contains(sortDirection)) {</span>
-<span class="fc" id="L81">      throw new IllegalArgumentException(</span>
-<span class="fc" id="L82">          String.format(</span>
+<span class="fc" id="L103">    List&lt;String&gt; allowedSortDirections = Arrays.asList(&quot;ASC&quot;, &quot;DESC&quot;);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">    if (!allowedSortDirections.contains(sortDirection)) {</span>
+<span class="fc" id="L105">      throw new IllegalArgumentException(</span>
+<span class="fc" id="L106">          String.format(</span>
               &quot;%s is not a valid sort direction.  Valid values are %s&quot;,
               sortDirection, allowedSortDirections));
     }
 
-<span class="fc" id="L87">    Direction sortDirectionObject = Direction.ASC;</span>
-<span class="fc bfc" id="L88" title="All 2 branches covered.">    if (sortDirection.equals(&quot;DESC&quot;)) {</span>
-<span class="fc" id="L89">      sortDirectionObject = Direction.DESC;</span>
+<span class="fc" id="L111">    Direction sortDirectionObject = Direction.ASC;</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">    if (sortDirection.equals(&quot;DESC&quot;)) {</span>
+<span class="fc" id="L113">      sortDirectionObject = Direction.DESC;</span>
     }
 
-<span class="fc" id="L92">    PageRequest pageRequest = PageRequest.of(page, pageSize, sortDirectionObject, sortField);</span>
+<span class="fc" id="L116">    PageRequest pageRequest = PageRequest.of(page, pageSize, sortDirectionObject, sortField);</span>
 
-<span class="fc" id="L94">    Iterable&lt;User&gt; users = userRepository.findAll(pageRequest);</span>
-<span class="fc" id="L95">    return users;</span>
+<span class="fc" id="L118">    Iterable&lt;User&gt; users = userRepository.findAll(pageRequest);</span>
+<span class="fc" id="L119">    return users;</span>
   }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
