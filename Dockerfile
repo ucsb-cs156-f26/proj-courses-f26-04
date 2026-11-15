@@ -8,15 +8,15 @@ WORKDIR /home/app
 
 COPY pom.xml .
 
-RUN mvn -Pproduction dependency:go-offline -B
+RUN mvn -ntp -Pproduction dependency:go-offline -B
 
 COPY frontend/package-lock.json frontend/package.json frontend/
 
-RUN mvn -Pproduction com.github.eirslett:frontend-maven-plugin:install-node-and-npm@install-node-and-npm com.github.eirslett:frontend-maven-plugin:npm@npm-install -B
+RUN mvn -ntp -Pproduction com.github.eirslett:frontend-maven-plugin:install-node-and-npm@install-node-and-npm com.github.eirslett:frontend-maven-plugin:npm@npm-install -B
 
 COPY . .
 
-RUN mvn -Pproduction -DskipTests -Dcache.use=true package -B
+RUN mvn -ntp -Pproduction -DskipTests -Dcache.use=true package -B
 
 FROM eclipse-temurin:25-jre-alpine
 

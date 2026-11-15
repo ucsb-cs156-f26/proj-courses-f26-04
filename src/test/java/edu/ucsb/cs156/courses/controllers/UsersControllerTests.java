@@ -3,6 +3,8 @@ package edu.ucsb.cs156.courses.controllers;
 // Tests for UsersController, including paged endpoints with sortField support
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,6 +18,7 @@ import edu.ucsb.cs156.courses.repositories.UserRepository;
 import edu.ucsb.cs156.courses.testconfig.TestConfig;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -214,5 +217,84 @@ public class UsersControllerTests extends ControllerTestCase {
     String expectedResponseAsJson = objectMapper.writeValueAsString(expectedResponse);
     String actualResponse = response.getResponse().getContentAsString();
     assertEquals(expectedResponseAsJson, actualResponse);
+  }
+
+  @Test
+  public void autocomplete__logged_out() throws Exception {
+    mockMvc
+        .perform(get("/api/admin/users/autocomplete").param("q", "ph"))
+        .andExpect(status().is(403));
+    verify(userRepository, never())
+        .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(any(), any(), any());
+  }
+
+  @WithMockUser(roles = {"USER"})
+  @Test
+  public void autocomplete__user_logged_in() throws Exception {
+    mockMvc
+        .perform(get("/api/admin/users/autocomplete").param("q", "ph"))
+        .andExpect(status().is(403));
+    verify(userRepository, never())
+        .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(any(), any(), any());
+  }
+
+  @WithMockUser(roles = {"ADMIN", "USER"})
+  @Test
+  public void autocomplete__admin_gets_matches_with_trimmed_query_and_limit() throws Exception {
+    User u1 = User.builder().id(1L).fullName("Phill Conrad").email("phtcon@ucsb.edu").build();
+    User u2 = User.builder().id(2L).fullName("Chris Gaucho").email("cgaucho@ucsb.edu").build();
+    List<User> expected = List.of(u1, u2);
+    PageRequest limit = PageRequest.of(0, 11);
+    when(userRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            "ph", "ph", limit))
+        .thenReturn(expected);
+
+    MvcResult response =
+        mockMvc
+            .perform(get("/api/admin/users/autocomplete").param("q", "  ph "))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    verify(userRepository, times(1))
+        .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase("ph", "ph", limit);
+    assertEquals(
+        objectMapper.writeValueAsString(expected), response.getResponse().getContentAsString());
+  }
+
+  @WithMockUser(roles = {"ADMIN", "USER"})
+  @Test
+  public void autocomplete__exactly_min_chars_queries_repository() throws Exception {
+    when(userRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            "ab", "ab", PageRequest.of(0, 11)))
+        .thenReturn(List.of());
+
+    mockMvc
+        .perform(get("/api/admin/users/autocomplete").param("q", "ab"))
+        .andExpect(status().isOk());
+
+    verify(userRepository, times(1))
+        .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            "ab", "ab", PageRequest.of(0, 11));
+  }
+
+  @WithMockUser(roles = {"ADMIN", "USER"})
+  @Test
+  public void autocomplete__too_short_returns_empty_without_querying() throws Exception {
+    for (String q : List.of("", "a", "   ", " a ")) {
+      MvcResult response =
+          mockMvc
+              .perform(get("/api/admin/users/autocomplete").param("q", q))
+              .andExpect(status().isOk())
+              .andReturn();
+      assertEquals("[]", response.getResponse().getContentAsString());
+    }
+    verify(userRepository, never())
+        .findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCase(any(), any(), any());
+  }
+
+  @WithMockUser(roles = {"ADMIN", "USER"})
+  @Test
+  public void autocomplete__missing_q_is_bad_request() throws Exception {
+    mockMvc.perform(get("/api/admin/users/autocomplete")).andExpect(status().isBadRequest());
   }
 }
