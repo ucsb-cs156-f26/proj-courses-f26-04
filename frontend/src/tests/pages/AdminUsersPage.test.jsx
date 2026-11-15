@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter } from "react-router-dom";
 import axios from "axios";
@@ -192,5 +193,106 @@ describe("AdminUsersPage tests", () => {
       screen.queryByTestId(`${testId}-cell-row-0-col-id`),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId("OurPagination-1")).not.toBeInTheDocument();
+  });
+
+  describe("typeahead search", () => {
+    const renderPage = () =>
+      render(
+        <QueryClientProvider
+          client={
+            new QueryClient({ defaultOptions: { queries: { retry: false } } })
+          }
+        >
+          <MemoryRouter>
+            <AdminUsersPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+    beforeEach(() => {
+      axiosMock.onGet("/api/admin/users").reply(200, {
+        content: usersFixtures.threeUsers,
+        totalPages: 2,
+      });
+      axiosMock
+        .onGet("/api/admin/users/autocomplete")
+        .reply(200, [usersFixtures.threeUsers[0], usersFixtures.threeUsers[1]]);
+    });
+
+    const autocompleteRequests = () =>
+      axiosMock.history.get.filter(
+        (request) => request.url === "/api/admin/users/autocomplete",
+      );
+
+    test("does not call autocomplete for fewer than 2 characters", async () => {
+      renderPage();
+      const user = userEvent.setup();
+      await screen.findByTestId("UsersTable-cell-row-0-col-id");
+
+      await user.type(screen.getByLabelText("Search by name or email"), "p");
+
+      expect(autocompleteRequests()).toHaveLength(0);
+    });
+
+    test("calls autocomplete with q and lists suggestions", async () => {
+      renderPage();
+      const user = userEvent.setup();
+      await screen.findByTestId("UsersTable-cell-row-0-col-id");
+
+      await user.type(screen.getByLabelText("Search by name or email"), "ph");
+
+      expect(
+        await screen.findByTestId("UserTypeahead-option-0"),
+      ).toHaveTextContent("Phill Conrad (phtcon@ucsb.edu)");
+      expect(screen.getByTestId("UserTypeahead-option-1")).toHaveTextContent(
+        "Phillip Conrad (pconrad.cis@gmail.com)",
+      );
+      const requests = autocompleteRequests();
+      expect(requests[requests.length - 1].params).toEqual({ q: "ph" });
+    });
+
+    test("selecting a user shows only that user, and clearing restores the list", async () => {
+      renderPage();
+      const user = userEvent.setup();
+      await screen.findByTestId("UsersTable-cell-row-0-col-id");
+
+      await user.type(screen.getByLabelText("Search by name or email"), "ph");
+      await user.click(await screen.findByTestId("UserTypeahead-option-1"));
+
+      expect(
+        screen.getByTestId("UsersTable-cell-row-0-col-email"),
+      ).toHaveTextContent("pconrad.cis@gmail.com");
+      expect(
+        screen.queryByTestId("UsersTable-cell-row-1-col-email"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("OurPagination-2")).not.toBeInTheDocument();
+
+      await user.click(screen.getByTestId("AdminUsersPage-clear"));
+
+      expect(
+        screen.getByTestId("UsersTable-cell-row-1-col-email"),
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("OurPagination-2")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("AdminUsersPage-clear"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Search by name or email")).toHaveValue("");
+    });
+
+    test("shows no matching users when the autocomplete request fails", async () => {
+      axiosMock.onGet("/api/admin/users/autocomplete").timeout();
+      const restoreConsole = mockConsole();
+      renderPage();
+      const user = userEvent.setup();
+      await screen.findByTestId("UsersTable-cell-row-0-col-id");
+
+      await user.type(screen.getByLabelText("Search by name or email"), "ph");
+
+      expect(await screen.findByText("No matching users")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("UserTypeahead-option-0"),
+      ).not.toBeInTheDocument();
+      restoreConsole();
+    });
   });
 });
