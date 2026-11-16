@@ -159,6 +159,51 @@ describe("EnrollmentHistoryGraph tests", () => {
     ]);
   });
 
+  test("does not add a total when there are no primary sections", () => {
+    const data = [
+      {
+        enrollCd: "10001",
+        section: "0101",
+        enrollment: 18,
+        dateCreated: "2026-04-13T08:15:00.000000",
+      },
+    ];
+
+    const { series } = createEnrollmentHistoryChartData(data, {
+      includeTotalEnrollment: true,
+    });
+
+    expect(series).toEqual([
+      { dataKey: "series0", name: "10001 - Section 0101" },
+    ]);
+  });
+
+  test("only adds a total for section numbers made entirely of digits ending in 00", () => {
+    const data = [
+      {
+        enrollCd: "10001",
+        section: "X0100",
+        enrollment: 18,
+        dateCreated: "2026-04-13T08:15:00.000000",
+      },
+      {
+        enrollCd: "10002",
+        section: "0100X",
+        enrollment: 20,
+        dateCreated: "2026-04-13T08:15:00.000000",
+      },
+    ];
+
+    const { series } = createEnrollmentHistoryChartData(data, {
+      includeTotalEnrollment: true,
+    });
+
+    expect(series.map(({ name }) => name)).toEqual([
+      "10001 - Section X0100",
+      "10002 - Section 0100X",
+    ]);
+  });
+
   test("sorts chart data chronologically by date created", () => {
     const unsortedEnrollmentData = [
       {
@@ -226,8 +271,19 @@ describe("EnrollmentHistoryGraph tests", () => {
     expect(container.querySelectorAll(".recharts-line")).toHaveLength(0);
   });
 
-  test("renders multiple section lines and legend labels", async () => {
+  test("does not include total enrollment by default", async () => {
     render(
+      <EnrollmentHistoryGraph
+        data={enrollmentDataPointFixtures.cmpsc130aLectureOverTime}
+      />,
+    );
+
+    expect(await screen.findByText("07609 - Section 0100")).toBeInTheDocument();
+    expect(screen.queryByText("Total Enrollment")).not.toBeInTheDocument();
+  });
+
+  test("renders multiple section lines and legend labels", async () => {
+    const { container } = render(
       <EnrollmentHistoryGraph
         data={enrollmentDataPointFixtures.cmpsc130aMultipleSectionsOverTime}
         title="CMPSC 130A Section Enrollment Over Time"
@@ -244,6 +300,13 @@ describe("EnrollmentHistoryGraph tests", () => {
       expect(screen.getByText("07617 - Section 0101")).toBeInTheDocument();
       expect(screen.getByText("07625 - Section 0102")).toBeInTheDocument();
       expect(screen.getByText("Total Enrollment")).toBeInTheDocument();
+      expect(container.querySelectorAll(".recharts-line-curve")).toHaveLength(
+        4,
+      );
     });
+
+    expect(
+      container.querySelectorAll(".recharts-line-curve")[3],
+    ).toHaveAttribute("stroke", "#dc3545");
   });
 });
