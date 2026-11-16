@@ -149,4 +149,56 @@ describe("SectionsTable.loggedOut tests", () => {
       screen.getByTestId(`${testId}-cell-row-0-col-session`),
     ).toHaveTextContent("");
   });
+
+  test("GE Areas column is not shown by default", async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <SectionsTable sections={primaryFixtures.f24_math_lowerDiv} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(`${testId}-expand-all-rows`),
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("GE Areas")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId(`${testId}-cell-row-0-col-geAreas`),
+    ).not.toBeInTheDocument();
+  });
+
+  test("GE Areas column shows each course's GE codes when showGeAreas is true", async () => {
+    const courseWithGe = primaryFixtures.f24_math_lowerDiv.findIndex(
+      (p) => p.generalEducation.length > 0,
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <SectionsTable
+            sections={primaryFixtures.f24_math_lowerDiv}
+            showGeAreas
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("GE Areas")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByTestId(`${testId}-cell-row-${courseWithGe}-col-geAreas`),
+    ).toHaveTextContent(/^C, QNT$/);
+
+    // section rows (shown after expanding) have no GE areas
+    fireEvent.click(screen.getByTestId(`${testId}-expand-all-rows`));
+    expect(
+      screen.getByTestId(`${testId}-cell-row-0.0-col-geAreas`),
+    ).toHaveTextContent(/^$/);
+  });
 });
