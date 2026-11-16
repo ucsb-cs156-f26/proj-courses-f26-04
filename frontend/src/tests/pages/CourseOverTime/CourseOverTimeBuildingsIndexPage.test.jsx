@@ -1,3 +1,7 @@
+import {
+  summerSessionSections,
+  nonSummerSessionSections,
+} from "fixtures/courseOverTimeSessionFixtures";
 import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -25,6 +29,7 @@ describe("CourseOverTimeBuildingsIndexPage tests", () => {
   const axiosMock = new AxiosMockAdapter(axios);
   const classroomOrAll = (query) => query.classroom || "ALL";
   beforeEach(() => {
+    localStorage.clear();
     axiosMock.resetHistory();
     axiosMock
       .onGet("/api/currentUser")
@@ -38,6 +43,47 @@ describe("CourseOverTimeBuildingsIndexPage tests", () => {
   });
 
   const queryClient = new QueryClient();
+  test.each([
+    ["20213", summerSessionSections, ["A", "B"]],
+    ["20214", nonSummerSessionSections, ["", ""]],
+  ])(
+    "displays the correct Session cells for quarter %s",
+    async (quarter, sections, expectedSessions) => {
+      axiosMock
+        .onGet("/api/public/courseovertime/buildingsearch/classrooms")
+        .reply(200, ["1930"]);
+      axiosMock
+        .onGet("/api/public/courseovertime/buildingsearch")
+        .reply(200, sections);
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <MemoryRouter>
+            <CourseOverTimeBuildingsIndexPage />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+      await userEvent.selectOptions(
+        await screen.findByLabelText("Quarter"),
+        quarter,
+      );
+      await userEvent.selectOptions(
+        screen.getByLabelText("Building Name"),
+        "BUCHN",
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+      expect(
+        await screen.findByRole("columnheader", { name: "Session" }),
+      ).toBeInTheDocument();
+      for (const [index, expected] of expectedSessions.entries()) {
+        const cell = await screen.findByTestId(
+          `ConvertedSectionTable-cell-row-${index}-col-session`,
+        );
+        expect(cell.textContent).toBe(expected);
+      }
+    },
+  );
+
   test("renders without crashing", () => {
     render(
       <QueryClientProvider client={queryClient}>

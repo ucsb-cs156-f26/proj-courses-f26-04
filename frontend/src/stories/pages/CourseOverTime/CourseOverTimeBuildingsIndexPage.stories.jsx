@@ -1,3 +1,7 @@
+import {
+  summerSessionSections,
+  nonSummerSessionSections,
+} from "fixtures/courseOverTimeSessionFixtures";
 import React from "react";
 
 import CourseOverTimeBuildingsIndexPage from "main/pages/CourseOverTime/CourseOverTimeBuildingsIndexPage";
@@ -14,7 +18,7 @@ export default {
 const Template = () => <CourseOverTimeBuildingsIndexPage />;
 
 export const Default = Template.bind({});
-Default.parameters = {
+const parametersForSections = (sections, filterByQuarter = false) => ({
   msw: [
     http.get("/api/UCSBSubjects/all", () => {
       return HttpResponse.json(ucsbSubjectsFixtures.threeSubjects, {
@@ -34,10 +38,32 @@ Default.parameters = {
         status: 200,
       });
     }),
-    http.get("/api/public/courseovertime/buildingsearch", () => {
-      return HttpResponse.json(coursesInLib, {
-        status: 200,
-      });
+    http.get("/api/public/courseovertime/buildingsearch", ({ request }) => {
+      const quarter = new URL(request.url).searchParams.get("startQtr");
+      return HttpResponse.json(
+        filterByQuarter
+          ? sections.filter((entry) => entry.courseInfo.quarter === quarter)
+          : sections,
+        {
+          status: 200,
+        },
+      );
     }),
   ],
+});
+
+Default.parameters = parametersForSections(coursesInLib);
+
+export const SessionExamples = Template.bind({});
+SessionExamples.parameters = {
+  ...parametersForSections(
+    [...summerSessionSections, ...nonSummerSessionSections],
+    true,
+  ),
+  docs: {
+    description: {
+      story:
+        "Select Summer 2021 or Fall 2021 and Buchanan Hall, then Submit. Summer rows show A and B; fall rows have blank Session cells.",
+    },
+  },
 };
