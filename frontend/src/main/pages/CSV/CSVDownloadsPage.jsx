@@ -7,8 +7,6 @@ import SingleLevelDropdown from "main/components/Levels/SingleLevelDropdown";
 import { useBackend } from "main/utils/useBackend";
 import { useSystemInfo } from "main/utils/systemInfo";
 import { quarterRange } from "main/utils/quarterUtilities";
-import axios from "axios";
-import { toast } from "react-toastify";
 
 // Stryker disable all : testing specific hard-coded dropdown options is just writing the code twice
 const csvLevels = [
@@ -50,6 +48,11 @@ export default function CSVDownloadsPage({
   const [level, setLevel] = useState("U");
   const [omitSections, setOmitSections] = useState(true);
   const [withTimeLocations, setWithTimeLocations] = useState(true);
+  // Start from the quarter saved in localStorage (if any), so the selection
+  // is restored after a page reload.
+  const [enrollmentQuarter, setEnrollmentQuarter] = useState(
+    () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
+  );
 
   const byQuarterUrl = `/api/courses/csv/quarter?yyyyq=${encodeURIComponent(quarter)}`;
   const byQuarterAndSubjectUrl =
@@ -58,6 +61,7 @@ export default function CSVDownloadsPage({
     `&level=${encodeURIComponent(level)}` +
     `&omitSections=${omitSections}` +
     `&withTimeLocations=${withTimeLocations}`;
+  const byEnrollmentQuarterUrl = `/api/enrollment/csv/quarter?yyyyq=${encodeURIComponent(enrollmentQuarter)}`;
 
   const downloadCsv = (url) => {
     browserLocation.assign(url);
@@ -73,24 +77,9 @@ export default function CSVDownloadsPage({
     downloadCsv(byQuarterAndSubjectUrl);
   };
 
-  // Start from the quarter saved in localStorage (if any), so the selection
-  // is restored after a page reload.
-  const [enrollmentQuarter, setEnrollmentQuarter] = useState(
-    () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
-  );
-
-  const handleEnrollmentSubmit = async (e) => {
+  const handleEnrollmentSubmit = (e) => {
     e.preventDefault();
-    try {
-      await axios.get("/api/enrollment/csv/quarter", {
-        params: { yyyyq: enrollmentQuarter },
-        responseType: "blob",
-      });
-    } catch (error) {
-      toast(`Error downloading enrollment CSV: ${error.message}`, {
-        type: "error",
-      });
-    }
+    downloadCsv(byEnrollmentQuarterUrl);
   };
 
   return (
