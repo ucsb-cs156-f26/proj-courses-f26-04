@@ -2,6 +2,9 @@ package edu.ucsb.cs156.courses.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -13,6 +16,7 @@ import edu.ucsb.cs156.courses.documents.CoursePageFixtures;
 import edu.ucsb.cs156.courses.documents.Primary;
 import edu.ucsb.cs156.courses.repositories.UserRepository;
 import edu.ucsb.cs156.courses.services.UCSBCurriculumService;
+import edu.ucsb.cs156.courses.services.UpdateCoursesService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +33,8 @@ public class UCSBCurriculumControllerTests extends ControllerTestCase {
   @Autowired private MockMvc mockMvc;
 
   @MockBean private UCSBCurriculumService ucsbCurriculumService;
+
+  @MockBean private UpdateCoursesService updateCoursesService;
 
   @Test
   public void test_search() throws Exception {
@@ -123,8 +129,8 @@ public class UCSBCurriculumControllerTests extends ControllerTestCase {
         objectMapper.readValue(expectedCoursePageJSON, CoursePage.class);
     List<Primary> expectedConvertedPrimaries = expectedCoursePage.getPrimaries();
 
-    when(ucsbCurriculumService.getPrimaries(subjectArea, quarter, level))
-        .thenReturn(expectedConvertedPrimaries);
+    when(ucsbCurriculumService.getCoursePage(subjectArea, quarter, level))
+        .thenReturn(expectedCoursePage);
     MvcResult response =
         mockMvc
             .perform(
@@ -139,6 +145,10 @@ public class UCSBCurriculumControllerTests extends ControllerTestCase {
 
     String body = response.getResponse().getContentAsString();
     assertEquals(objectMapper.writeValueAsString(expectedConvertedPrimaries), body);
+
+    // the same parsed page is also written through to MongoDB
+    verify(updateCoursesService, times(1))
+        .upsertAsync(eq(expectedCoursePage.convertedSections()), eq(quarter), eq(subjectArea));
   }
 
   @Test
@@ -153,8 +163,7 @@ public class UCSBCurriculumControllerTests extends ControllerTestCase {
         objectMapper.readValue(expectedCoursePageJSON, CoursePage.class);
     List<Primary> expectedConvertedPrimaries = expectedCoursePage.getPrimaries();
 
-    when(ucsbCurriculumService.getPrimariesByGE(quarter, area))
-        .thenReturn(expectedConvertedPrimaries);
+    when(ucsbCurriculumService.getCoursePageByGE(quarter, area)).thenReturn(expectedCoursePage);
     MvcResult response =
         mockMvc
             .perform(
@@ -168,5 +177,9 @@ public class UCSBCurriculumControllerTests extends ControllerTestCase {
 
     String body = response.getResponse().getContentAsString();
     assertEquals(objectMapper.writeValueAsString(expectedConvertedPrimaries), body);
+
+    // the same parsed page is also written through to MongoDB
+    verify(updateCoursesService, times(1))
+        .upsertAsync(eq(expectedCoursePage.convertedSections()), eq(quarter), eq(area));
   }
 }
