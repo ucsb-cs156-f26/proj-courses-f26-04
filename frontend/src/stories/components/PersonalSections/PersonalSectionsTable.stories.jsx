@@ -2,6 +2,7 @@ import React from "react";
 
 import PersonalSectionsTable from "main/components/PersonalSections/PersonalSectionsTable";
 import { personalSectionsFixtures } from "fixtures/personalSectionsFixtures";
+import { personalSectionsSessionFixtures } from "fixtures/personalSectionsSessionFixtures";
 import { currentUserFixtures } from "fixtures/currentUserFixtures";
 
 import { toast } from "react-toastify";
@@ -46,3 +47,32 @@ ThreeSubjectsAdminUser.args = {
 ThreeSubjectsAdminUser.parameters = {
   msw: mswMocks,
 };
+
+export const SummerSessionA = Template.bind({});
+SummerSessionA.args = {
+  personalSections: [personalSectionsSessionFixtures.summerA],
+  psId: 1,
+  currentUser: currentUserFixtures.userOnly,
+};
+SummerSessionA.parameters = { msw: mswMocks };
+
+export const SummerSessionB = Template.bind({});
+SummerSessionB.args = {
+  ...SummerSessionA.args,
+  personalSections: [personalSectionsSessionFixtures.summerB],
+};
+SummerSessionB.parameters = { msw: mswMocks };
+
+export const NonSummerSession = Template.bind({});
+NonSummerSession.args = {
+  ...SummerSessionA.args,
+  personalSections: [personalSectionsSessionFixtures.fallWithSession],
+};
+NonSummerSession.parameters = { msw: mswMocks };
+
+export const MissingSummerSession = Template.bind({});
+MissingSummerSession.args = {
+  ...SummerSessionA.args,
+  personalSections: [personalSectionsSessionFixtures.summerWithoutSession],
+};
+MissingSummerSession.parameters = { msw: mswMocks };
