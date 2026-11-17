@@ -1,7 +1,6 @@
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
-import { useParams } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import PersonalScheduleForm from "main/components/PersonalSchedules/PersonalScheduleForm";
-import { Navigate } from "react-router-dom";
 import { useBackend, useBackendMutation } from "main/utils/useBackend";
 import { Button } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -9,7 +8,12 @@ import { toast } from "react-toastify";
 export default function PersonalSchedulesEditPage() {
   const createButton = () => {
     return (
-      <Button variant="primary" href="/personalschedules/list" style={{}}>
+      <Button
+        variant="primary"
+        as={Link}
+        to="/personalschedules/list"
+        style={{}}
+      >
         Back
       </Button>
     );

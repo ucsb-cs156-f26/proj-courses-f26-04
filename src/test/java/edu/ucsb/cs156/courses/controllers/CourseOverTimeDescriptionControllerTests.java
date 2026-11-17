@@ -14,6 +14,7 @@ import edu.ucsb.cs156.courses.config.RateLimitConfig;
 import edu.ucsb.cs156.courses.config.SecurityConfig;
 import edu.ucsb.cs156.courses.documents.ConvertedSection;
 import edu.ucsb.cs156.courses.documents.CourseInfo;
+import edu.ucsb.cs156.courses.documents.Primary;
 import edu.ucsb.cs156.courses.documents.Section;
 import edu.ucsb.cs156.courses.filters.RateLimitFilter;
 import edu.ucsb.cs156.courses.repositories.RateLimitedIPRepository;
@@ -79,8 +80,8 @@ public class CourseOverTimeDescriptionControllerTests {
             .description("Intro to object oriented design and data science")
             .build();
 
-    Section section1 = new Section();
-    Section section2 = new Section();
+    Section section1 = Section.builder().enrollCode("07500").section("0100").build();
+    Section section2 = Section.builder().enrollCode("07501").section("0101").build();
 
     ConvertedSection cs1 = ConvertedSection.builder().courseInfo(info).section(section1).build();
     ConvertedSection cs2 = ConvertedSection.builder().courseInfo(info).section(section2).build();
@@ -90,16 +91,29 @@ public class CourseOverTimeDescriptionControllerTests {
 
     String url = String.format(urlTemplate, "20222", "20222", "data", "false");
 
-    List<ConvertedSection> expectedSecs = new ArrayList<ConvertedSection>();
-    expectedSecs.addAll(Arrays.asList(cs1, cs2));
+    // the database returns the discussion section before its lecture
+    List<ConvertedSection> databaseResult = new ArrayList<ConvertedSection>();
+    databaseResult.addAll(Arrays.asList(cs2, cs1));
+
+    // the discussion section (0101) should be grouped under its lecture (0100)
+    List<Primary> expectedPrimaries =
+        Arrays.asList(
+            Primary.builder()
+                .quarter("20222")
+                .courseId("CMPSC   24 -1")
+                .title("OBJ ORIENTED DESIGN")
+                .description("Intro to object oriented design and data science")
+                .primary(section1)
+                .subRows(Arrays.asList(section2))
+                .build());
 
     when(convertedSectionCollection.findByQuarterRangeAndSearchTerms(
             any(String.class), any(String.class), eq(Pattern.quote("data")), eq(".*")))
-        .thenReturn(expectedSecs);
+        .thenReturn(databaseResult);
 
     MvcResult response = mockMvc.perform(get(url)).andExpect(status().isOk()).andReturn();
 
-    String expectedString = mapper.writeValueAsString(expectedSecs);
+    String expectedString = mapper.writeValueAsString(expectedPrimaries);
     String responseString = response.getResponse().getContentAsString();
 
     assertEquals(expectedString, responseString);
@@ -110,41 +124,62 @@ public class CourseOverTimeDescriptionControllerTests {
 
   @Test
   public void test_search_validRequestOnlyLectures() throws Exception {
-    CourseInfo info =
+    CourseInfo info1 =
         CourseInfo.builder()
             .quarter("20222")
             .courseId("CMPSC   24 -1")
             .title("OBJ ORIENTED DESIGN")
             .description("Intro to object oriented design and data science")
             .build();
+    CourseInfo info2 =
+        CourseInfo.builder()
+            .quarter("20244")
+            .courseId("CMPSC   24 -1")
+            .title("OBJ ORIENTED DESIGN")
+            .description("Intro to object oriented design and data science")
+            .build();
 
-    Section section1 = new Section();
-    Section section2 = new Section();
+    Section section1 = Section.builder().enrollCode("07500").section("0100").build();
+    Section section2 = Section.builder().enrollCode("07555").section("0100").build();
 
-    ConvertedSection cs1 = ConvertedSection.builder().courseInfo(info).section(section1).build();
-
-    ConvertedSection cs2 = (ConvertedSection) cs1.clone();
-    cs2.setSection(section2);
-    cs2.getCourseInfo().setQuarter("20244");
+    ConvertedSection cs1 = ConvertedSection.builder().courseInfo(info1).section(section1).build();
+    ConvertedSection cs2 = ConvertedSection.builder().courseInfo(info2).section(section2).build();
 
     String urlTemplate =
         "/api/public/description/search?startQtr=%s&endQtr=%s&searchTerms=%s&lectureOnly=%s";
 
     String url = String.format(urlTemplate, "20222", "20244", "data", "true");
 
-    List<ConvertedSection> expectedSecsOutOfOrder = new ArrayList<ConvertedSection>();
-    expectedSecsOutOfOrder.addAll(Arrays.asList(cs1, cs2));
+    List<ConvertedSection> databaseResultOutOfOrder = new ArrayList<ConvertedSection>();
+    databaseResultOutOfOrder.addAll(Arrays.asList(cs1, cs2));
 
-    List<ConvertedSection> expectedSecsInOrder = new ArrayList<ConvertedSection>();
-    expectedSecsInOrder.addAll(Arrays.asList(cs2, cs1));
+    // results should be sorted by quarter, descending (cs2 is 20244, cs1 is 20222)
+    List<Primary> expectedPrimariesInOrder =
+        Arrays.asList(
+            Primary.builder()
+                .quarter("20244")
+                .courseId("CMPSC   24 -1")
+                .title("OBJ ORIENTED DESIGN")
+                .description("Intro to object oriented design and data science")
+                .primary(section2)
+                .subRows(new ArrayList<>())
+                .build(),
+            Primary.builder()
+                .quarter("20222")
+                .courseId("CMPSC   24 -1")
+                .title("OBJ ORIENTED DESIGN")
+                .description("Intro to object oriented design and data science")
+                .primary(section1)
+                .subRows(new ArrayList<>())
+                .build());
 
     when(convertedSectionCollection.findByQuarterRangeAndSearchTerms(
             any(String.class), any(String.class), eq(Pattern.quote("data")), eq(".*00$")))
-        .thenReturn(expectedSecsOutOfOrder);
+        .thenReturn(databaseResultOutOfOrder);
 
     MvcResult response = mockMvc.perform(get(url)).andExpect(status().isOk()).andReturn();
 
-    String expectedString = mapper.writeValueAsString(expectedSecsInOrder);
+    String expectedString = mapper.writeValueAsString(expectedPrimariesInOrder);
     String responseString = response.getResponse().getContentAsString();
 
     assertEquals(expectedString, responseString);

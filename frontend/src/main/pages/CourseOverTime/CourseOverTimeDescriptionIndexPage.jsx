@@ -2,7 +2,7 @@ import { useState } from "react";
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
 import CourseOverTimeDescriptionSearchForm from "main/components/BasicCourseSearch/CourseOverTimeDescriptionSearchForm";
 import { useBackendMutation } from "main/utils/useBackend";
-import ConvertedSectionTable from "main/components/Common/ConvertedSectionTable";
+import SectionsTable from "main/components/Sections/SectionsTable";
 
 export default function CourseOverTimeDescriptionIndexPage() {
   const [courseJSON, setCourseJSON] = useState([]);
@@ -49,7 +49,7 @@ export default function CourseOverTimeDescriptionIndexPage() {
           </div>
         )}
         {!mutation.isLoading && courseJSON.length > 0 && (
-          <ConvertedSectionTable sections={courseJSON} showSession />
+          <SectionsTable sections={courseJSON} schedules={[]} showSession />
         )}
       </div>
     </BasicLayout>
