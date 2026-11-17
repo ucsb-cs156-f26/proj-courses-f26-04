@@ -1,8 +1,10 @@
 package edu.ucsb.cs156.courses.controllers;
 
+import edu.ucsb.cs156.courses.documents.CoursePage;
 import edu.ucsb.cs156.courses.documents.Primary;
 import edu.ucsb.cs156.courses.repositories.UserRepository;
 import edu.ucsb.cs156.courses.services.UCSBCurriculumService;
+import edu.ucsb.cs156.courses.services.UpdateCoursesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +25,7 @@ public class UCSBCurriculumController extends ApiController {
 
   @Autowired UserRepository userRepository;
   @Autowired UCSBCurriculumService ucsbCurriculumService;
+  @Autowired UpdateCoursesService updateCoursesService;
 
   @Operation(
       summary =
@@ -52,17 +55,24 @@ public class UCSBCurriculumController extends ApiController {
       @RequestParam String qtr, @RequestParam String dept, @RequestParam String level)
       throws Exception {
 
-    List<Primary> primaries = ucsbCurriculumService.getPrimaries(dept, qtr, level);
+    CoursePage coursePage = ucsbCurriculumService.getCoursePage(dept, qtr, level);
+    // Runs on a background thread (see UpdateCoursesService.upsertAsync); never blocks or fails
+    // this response.
+    updateCoursesService.upsertAsync(coursePage.convertedSections(), qtr, dept);
 
-    return primaries;
+    return coursePage.getPrimaries();
   }
 
   @Operation(summary = "Get primaries for a given quarter and GE area")
   @GetMapping(value = "/primariesge", produces = "application/json")
   public List<Primary> primariesGE(@RequestParam String qtr, @RequestParam String area)
       throws Exception {
-    List<Primary> primaries = ucsbCurriculumService.getPrimariesByGE(qtr, area);
-    return primaries;
+    CoursePage coursePage = ucsbCurriculumService.getCoursePageByGE(qtr, area);
+    // GE results span many subjects; `area` only labels the in-memory Update returned by upsert,
+    // which is never saved for user searches (fromJob = false).
+    updateCoursesService.upsertAsync(coursePage.convertedSections(), qtr, area);
+
+    return coursePage.getPrimaries();
   }
 
   // Backend for final exam info, similar to the above operation:
