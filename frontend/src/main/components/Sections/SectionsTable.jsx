@@ -11,6 +11,7 @@ import {
   formatTime,
   formatStatus,
   formatSession,
+  formatGeAreas,
   enrollmentFraction,
   getSection,
   getSectionField,
@@ -57,6 +58,7 @@ export default function SectionsTable({
   sections,
   schedules = [],
   showSession = false,
+  showGeAreas = false,
 }) {
   if (!(schedules instanceof Array)) {
     throw new Error("schedules prop must be an array");
@@ -134,6 +136,15 @@ export default function SectionsTable({
       accessorKey: "title",
       header: "Title",
     },
+    ...(showGeAreas
+      ? [
+          {
+            id: "geAreas",
+            header: "GE Areas",
+            cell: ({ row }) => formatGeAreas(row.original.generalEducation),
+          },
+        ]
+      : []),
     {
       header: "Status",
       accessorKey: "status",

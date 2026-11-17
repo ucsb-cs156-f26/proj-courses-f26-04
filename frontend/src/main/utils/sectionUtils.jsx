@@ -111,6 +111,13 @@ export const formatSession = (quarter, session) => {
   return session.length > 5 ? session[5] : "";
 };
 
+/*
+Formats the GE areas of a course (e.g. [{ geCode: "C  ", geCollege: "L&S " }, { geCode: "QNT", ... }])
+as a comma-separated list of GE codes (e.g. "C, QNT"). Section rows have no GE areas, so they get "".
+*/
+export const formatGeAreas = (generalEducation) =>
+  (generalEducation ?? []).map((ge) => ge.geCode.trim()).join(", ");
+
 export const getQuarter = (row) =>
   row.depth === 0 ? row.original.quarter : row.getParentRow().original.quarter;
 
