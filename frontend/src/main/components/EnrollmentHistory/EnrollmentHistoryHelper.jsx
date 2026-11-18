@@ -15,6 +15,8 @@ export const getEnrollmentSeriesKey = (dataPoint) =>
 export const getEnrollmentSeriesLabel = (dataPoint) =>
   `${dataPoint.enrollCd} - Section ${dataPoint.section}`;
 
+const isPrimarySection = (section) => /^\d+00$/.test(section);
+
 export const formatDateCreated = (dateCreated) => dateCreated.slice(0, 10);
 
 export const formatEnrollmentTooltip = (value, name) => [
@@ -22,11 +24,15 @@ export const formatEnrollmentTooltip = (value, name) => [
   name,
 ];
 
-export const createEnrollmentHistoryChartData = (data = []) => {
+export const createEnrollmentHistoryChartData = (
+  data = [],
+  { includeTotalEnrollment = false } = {},
+) => {
   const sortedData = [...data].sort((a, b) =>
     a.dateCreated.localeCompare(b.dateCreated),
   );
   const seriesByKey = new Map();
+  const primarySeries = [];
   const chartDataByDate = new Map();
 
   sortedData.forEach((dataPoint) => {
@@ -37,6 +43,9 @@ export const createEnrollmentHistoryChartData = (data = []) => {
         dataKey: `series${seriesByKey.size}`,
         name: getEnrollmentSeriesLabel(dataPoint),
       });
+      if (isPrimarySection(dataPoint.section)) {
+        primarySeries.push(seriesByKey.get(seriesKey));
+      }
     }
 
     if (!chartDataByDate.has(dataPoint.dateCreated)) {
@@ -48,6 +57,32 @@ export const createEnrollmentHistoryChartData = (data = []) => {
     const chartRow = chartDataByDate.get(dataPoint.dateCreated);
     chartRow[seriesByKey.get(seriesKey).dataKey] = dataPoint.enrollment;
   });
+
+  if (includeTotalEnrollment && primarySeries.length > 0) {
+    const latestEnrollmentBySeries = new Map();
+    const totalSeries = {
+      dataKey: "totalEnrollment",
+      name: "Total Enrollment",
+    };
+
+    chartDataByDate.forEach((chartRow) => {
+      primarySeries.forEach(({ dataKey }) => {
+        if (chartRow[dataKey] !== undefined) {
+          latestEnrollmentBySeries.set(dataKey, chartRow[dataKey]);
+        }
+      });
+
+      chartRow[totalSeries.dataKey] =
+        latestEnrollmentBySeries.size === primarySeries.length
+          ? Array.from(latestEnrollmentBySeries.values()).reduce(
+              (total, enrollment) => total + enrollment,
+              0,
+            )
+          : null;
+    });
+
+    seriesByKey.set(totalSeries.dataKey, totalSeries);
+  }
 
   return {
     chartData: Array.from(chartDataByDate.values()),

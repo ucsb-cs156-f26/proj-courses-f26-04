@@ -1,7 +1,7 @@
 import { useState } from "react";
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
 import GEAreaSearchForm from "main/components/GEAreas/GEAreaSearchForm";
-import GEAreaCoursesTable from "main/components/GEAreas/GEAreaCoursesTable";
+import SectionsTable from "main/components/Sections/SectionsTable";
 import { useBackendMutation } from "main/utils/useBackend";
 
 export default function GeneralEducationSearchPage() {
@@ -44,7 +44,7 @@ export default function GeneralEducationSearchPage() {
         )}
 
         {!mutation.isLoading && courses.length > 0 && (
-          <GEAreaCoursesTable courses={courses} />
+          <SectionsTable sections={courses} schedules={[]} showGeAreas />
         )}
       </div>
     </BasicLayout>

@@ -49,3 +49,19 @@ f24_math_lowerDiv.parameters = {
     }),
   ],
 };
+
+export const f24_math_lowerDiv_withGeAreas = Template.bind({});
+
+f24_math_lowerDiv_withGeAreas.args = {
+  sections: primaryFixtures.f24_math_lowerDiv,
+  showGeAreas: true,
+};
+f24_math_lowerDiv_withGeAreas.parameters = {
+  ...f24_math_lowerDiv.parameters,
+  docs: {
+    description: {
+      story:
+        "With showGeAreas (used by the GE Search page): a GE Areas column lists each course's GE codes, e.g. C, QNT for MATH 2A. Section rows leave it blank.",
+    },
+  },
+};

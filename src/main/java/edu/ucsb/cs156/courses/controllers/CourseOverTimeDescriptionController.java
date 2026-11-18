@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.ucsb.cs156.courses.collections.ConvertedSectionCollection;
 import edu.ucsb.cs156.courses.documents.ConvertedSection;
+import edu.ucsb.cs156.courses.documents.Primary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.ArrayList;
@@ -68,8 +69,9 @@ public class CourseOverTimeDescriptionController {
             convertedSectionCollection.findByQuarterRangeAndSearchTerms(
                 startQtr, endQtr, escapedSearchTerms, sectionRegex));
 
-    courseResults.sort(new ConvertedSection.ConvertedSectionSortDescendingByQuarterComparator());
-    String body = mapper.writeValueAsString(courseResults);
+    List<Primary> primaries = Primary.fromConvertedSections(courseResults);
+
+    String body = mapper.writeValueAsString(primaries);
     return ResponseEntity.ok().body(body);
   }
 }
