@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.ucsb.cs156.courses.collections.ConvertedSectionCollection;
 import edu.ucsb.cs156.courses.documents.ConvertedSection;
+import edu.ucsb.cs156.courses.documents.Primary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.ArrayList;
@@ -18,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(&quot;/api/public/description&quot;)
-<span class="fc" id="L21">public class CourseOverTimeDescriptionController {</span>
+<span class="fc" id="L22">public class CourseOverTimeDescriptionController {</span>
 
-<span class="fc" id="L23">  private ObjectMapper mapper = new ObjectMapper();</span>
+<span class="fc" id="L24">  private ObjectMapper mapper = new ObjectMapper();</span>
 
   @Autowired ConvertedSectionCollection convertedSectionCollection;
 
@@ -60,17 +61,18 @@ import org.springframework.web.bind.annotation.RestController;
           boolean lectureOnly)
       throws JsonProcessingException {
     List&lt;ConvertedSection&gt; courseResults;
-<span class="fc bfc" id="L63" title="All 2 branches covered.">    String sectionRegex = lectureOnly ? &quot;.*00$&quot; : &quot;.*&quot;;</span>
-<span class="fc" id="L64">    String escapedSearchTerms = Pattern.quote(searchTerms);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">    String sectionRegex = lectureOnly ? &quot;.*00$&quot; : &quot;.*&quot;;</span>
+<span class="fc" id="L65">    String escapedSearchTerms = Pattern.quote(searchTerms);</span>
 
-<span class="fc" id="L66">    courseResults =</span>
+<span class="fc" id="L67">    courseResults =</span>
         new ArrayList&lt;&gt;(
-<span class="fc" id="L68">            convertedSectionCollection.findByQuarterRangeAndSearchTerms(</span>
+<span class="fc" id="L69">            convertedSectionCollection.findByQuarterRangeAndSearchTerms(</span>
                 startQtr, endQtr, escapedSearchTerms, sectionRegex));
 
-<span class="fc" id="L71">    courseResults.sort(new ConvertedSection.ConvertedSectionSortDescendingByQuarterComparator());</span>
-<span class="fc" id="L72">    String body = mapper.writeValueAsString(courseResults);</span>
-<span class="fc" id="L73">    return ResponseEntity.ok().body(body);</span>
+<span class="fc" id="L72">    List&lt;Primary&gt; primaries = Primary.fromConvertedSections(courseResults);</span>
+
+<span class="fc" id="L74">    String body = mapper.writeValueAsString(primaries);</span>
+<span class="fc" id="L75">    return ResponseEntity.ok().body(body);</span>
   }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
