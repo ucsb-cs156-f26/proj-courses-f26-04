@@ -1,3 +1,7 @@
+import {
+  summerSessionSections,
+  nonSummerSessionSections,
+} from "fixtures/courseOverTimeSessionFixtures";
 import React from "react";
 
 import CourseOverTimeInstructorIndexPage from "main/pages/CourseOverTime/CourseOverTimeInstructorIndexPage";
@@ -17,7 +21,7 @@ export default {
 const Template = () => <CourseOverTimeInstructorIndexPage />;
 
 export const Default = Template.bind({});
-Default.parameters = {
+const parametersForSections = (sections) => ({
   msw: [
     http.get("/api/UCSBSubjects/all", () => {
       return HttpResponse.json(ucsbSubjectsFixtures.threeSubjects, {
@@ -26,7 +30,7 @@ Default.parameters = {
     }),
     http.get("/api/public/courseovertime/instructorsearch", ({ request }) => {
       toast(`Generated: ${request.method} ${request.url}`);
-      return HttpResponse.json(threeSections, {
+      return HttpResponse.json(sections, {
         status: 200,
       });
     }),
@@ -50,4 +54,20 @@ Default.parameters = {
       );
     }),
   ],
+});
+
+Default.parameters = parametersForSections(threeSections);
+
+export const SessionExamples = Template.bind({});
+SessionExamples.parameters = {
+  ...parametersForSections([
+    ...summerSessionSections,
+    ...nonSummerSessionSections,
+  ]),
+  docs: {
+    description: {
+      story:
+        "Search from Summer 2021 through Fall 2021, then Submit. Summer rows show A and B; fall rows have blank Session cells.",
+    },
+  },
 };
