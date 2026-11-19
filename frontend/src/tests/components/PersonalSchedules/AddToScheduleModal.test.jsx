@@ -109,7 +109,13 @@ describe("AddToScheduleModal", () => {
     onError({ message: "Network Error" });
     expect(toast).toHaveBeenLastCalledWith("Error: Network Error");
 
+    onError({ response: {}, message: "No Data" });
+    expect(toast).toHaveBeenLastCalledWith("Error: No Data");
+
     onError({});
+    expect(toast).toHaveBeenLastCalledWith("Error: Unknown error");
+
+    onError(undefined);
     expect(toast).toHaveBeenLastCalledWith("Error: Unknown error");
   });
 
@@ -144,6 +150,31 @@ describe("AddToScheduleModal", () => {
     await waitFor(() => {
       expect(screen.queryByText("Add to Schedule")).not.toBeInTheDocument();
     });
+  });
+
+  test("hides the selector modal if schedules become unavailable", () => {
+    const queryClient = new QueryClient();
+    const schedule = { id: 1, name: "Plan A", quarter };
+    const renderWithSchedules = (schedules) => (
+      <QueryClientProvider client={queryClient}>
+        <AddToScheduleModal
+          quarter={quarter}
+          section="test-section"
+          onAdd={mockOnAdd}
+          schedules={schedules}
+        />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(renderWithSchedules([schedule]));
+
+    fireEvent.click(
+      screen.getByTestId("AddToScheduleModal-add-to-schedule-button"),
+    );
+    expect(screen.getByText("Add to Schedule")).toBeInTheDocument();
+
+    rerender(renderWithSchedules([]));
+
+    expect(screen.queryByText("Add to Schedule")).not.toBeInTheDocument();
   });
 
   test("disables Add and shows progress while creating", () => {
