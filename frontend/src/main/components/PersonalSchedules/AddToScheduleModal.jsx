@@ -17,14 +17,6 @@ export default function AddToScheduleModal({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState("");
-  const [modalMode, setModalMode] = useState("normal");
-  const [scheduleParams, setScheduleParams] = useState({
-    // Stryker disable next-line StringLiteral : initial values are overwritten before use
-    name: "",
-    // Stryker disable next-line StringLiteral : initial values are overwritten before use
-    description: "",
-    quarter: quarter,
-  });
 
   const filteringSchedules = schedulesFilter(schedules, quarter);
 
@@ -59,7 +51,6 @@ export default function AddToScheduleModal({
 
   const handleModalClose = () => {
     setShowModal(false);
-    setModalMode("normal");
   };
 
   const handleModalSave = () => {
@@ -67,43 +58,30 @@ export default function AddToScheduleModal({
     handleModalClose();
   };
 
-  const handleModalSaveSchedule = () => {
-    mutation.mutate({ ...scheduleParams, quarter });
-  };
-
-  const handleCreateClick = () => {
-    const safeName = `${yyyyqToQyy(quarter)} Schedule`;
-    setScheduleParams((prev) => ({
-      ...prev,
-      quarter,
-      name: safeName,
-      description: "Auto-generated schedule",
-    }));
-    setModalMode("auto-create");
-  };
-
-  const onSaveButtonClick = () => {
-    if (modalMode === "auto-create") {
-      handleModalSaveSchedule();
+  const handleAddButtonClick = () => {
+    if (filteringSchedules.length === 0) {
+      mutation.mutate({
+        name: yyyyqToQyy(quarter),
+        description: "",
+        quarter,
+      });
     } else {
-      handleModalSave();
+      setShowModal(true);
     }
   };
-
-  const showSaveButton =
-    modalMode === "auto-create" || filteringSchedules.length > 0;
 
   return (
     <>
       <Button
         variant="success"
-        onClick={() => setShowModal(true)}
+        onClick={handleAddButtonClick}
+        disabled={mutation.isLoading}
         data-testid={`${testid}-add-to-schedule-button`}
       >
-        Add
+        {mutation.isLoading ? "Creating..." : "Add"}
       </Button>
       <Modal
-        show={showModal}
+        show={showModal && filteringSchedules.length > 0}
         onHide={handleModalClose}
         animation={false}
         data-testid={`${testid}-modal`}
@@ -113,46 +91,15 @@ export default function AddToScheduleModal({
         </Modal.Header>
         <Modal.Body>
           <Form>
-            {
-              /* istanbul ignore next */
-              filteringSchedules.length > 0 && modalMode === "normal" ? (
-                <Form.Group controlId="scheduleSelect">
-                  <Form.Label>Select Schedule</Form.Label>
-                  <PersonalScheduleSelector
-                    schedule={selectedSchedule}
-                    setSchedule={setSelectedSchedule}
-                    controlId="scheduleSelect"
-                    filteringSchedules={filteringSchedules}
-                  />
-                </Form.Group>
-              ) : (
-                <div data-testid={`${testid}-no-schedules`}>
-                  {modalMode === "auto-create" ? (
-                    <p>
-                      New Schedule: <strong>{scheduleParams.name}</strong> will
-                      be created.
-                    </p>
-                  ) : (
-                    <p>
-                      There are no personal schedules for {yyyyqToQyy(quarter)}.
-                      <Button
-                        onClick={handleCreateClick}
-                        style={{
-                          backgroundColor: "transparent",
-                          border: "none",
-                          color: "#007bff",
-                          padding: 0,
-                          verticalAlign: "baseline",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        [Create Personal Schedule]
-                      </Button>
-                    </p>
-                  )}
-                </div>
-              )
-            }
+            <Form.Group controlId="scheduleSelect">
+              <Form.Label>Select Schedule</Form.Label>
+              <PersonalScheduleSelector
+                schedule={selectedSchedule}
+                setSchedule={setSelectedSchedule}
+                controlId="scheduleSelect"
+                filteringSchedules={filteringSchedules}
+              />
+            </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -163,16 +110,13 @@ export default function AddToScheduleModal({
           >
             Cancel
           </Button>
-          {showSaveButton && (
-            <Button
-              variant="primary"
-              onClick={onSaveButtonClick}
-              data-testid={`${testid}-modal-save-button`}
-              disabled={mutation.isLoading}
-            >
-              {mutation.isLoading ? "Creating..." : "Save Changes"}
-            </Button>
-          )}
+          <Button
+            variant="primary"
+            onClick={handleModalSave}
+            data-testid={`${testid}-modal-save-button`}
+          >
+            Save Changes
+          </Button>
         </Modal.Footer>
       </Modal>
     </>
