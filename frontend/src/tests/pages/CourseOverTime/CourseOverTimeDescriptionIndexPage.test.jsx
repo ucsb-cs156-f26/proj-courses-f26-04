@@ -1,6 +1,6 @@
 import {
-  summerSessionSections,
-  nonSummerSessionSections,
+  summerSessionPrimaries,
+  nonSummerSessionPrimaries,
 } from "fixtures/courseOverTimeSessionFixtures";
 import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -13,7 +13,7 @@ import * as useBackend from "main/utils/useBackend.jsx";
 import CourseOverTimeDescriptionIndexPage from "main/pages/CourseOverTime/CourseOverTimeDescriptionIndexPage";
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
-import { threeSections } from "fixtures/sectionFixtures";
+import primaryFixtures from "fixtures/primaryFixtures";
 import userEvent from "@testing-library/user-event";
 
 const mockToast = vi.fn();
@@ -45,7 +45,7 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
     const expectedSessions = ["A", "B", "", ""];
     axiosMock
       .onGet("/api/public/description/search")
-      .reply(200, [...summerSessionSections, ...nonSummerSessionSections]);
+      .reply(200, [...summerSessionPrimaries, ...nonSummerSessionPrimaries]);
     render(
       <QueryClientProvider client={new QueryClient()}>
         <MemoryRouter>
@@ -69,7 +69,7 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
     ).toBeInTheDocument();
     for (const [index, expected] of expectedSessions.entries()) {
       const cell = await screen.findByTestId(
-        `ConvertedSectionTable-cell-row-${index}-col-session`,
+        `SectionsTable-cell-row-${index}-col-session`,
       );
       expect(cell.textContent).toBe(expected);
     }
@@ -85,9 +85,11 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
     );
   });
 
-  test("calls UCSB Course description search api correctly with 3 section response", async () => {
+  test("calls UCSB Course description search api correctly with a one lecture response", async () => {
     const useBackendMutationSpy = vi.spyOn(useBackend, "useBackendMutation");
-    axiosMock.onGet("/api/public/description/search").reply(200, threeSections);
+    axiosMock
+      .onGet("/api/public/description/search")
+      .reply(200, primaryFixtures.singleLectureSectionWithNoDiscussion);
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -132,7 +134,7 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
       [],
     );
 
-    expect(screen.getByText("COMP ENGR SEMINAR")).toBeInTheDocument();
+    expect(await screen.findByText("GROUP STUDIES-MATH")).toBeInTheDocument();
   });
 
   const renderPage = () =>
@@ -156,9 +158,7 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
 
     expect(screen.queryByText(noCoursesMessage)).not.toBeInTheDocument();
     expect(screen.queryByText("Loading courses...")).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("ConvertedSectionTable"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("SectionsTable")).not.toBeInTheDocument();
   });
 
   test("shows the no courses message when the search returns no courses", async () => {
@@ -193,13 +193,41 @@ describe("CourseOverTimeDescriptionIndexPage tests", () => {
   });
 
   test("shows the results and no message when the search returns courses", async () => {
-    axiosMock.onGet("/api/public/description/search").reply(200, threeSections);
+    axiosMock
+      .onGet("/api/public/description/search")
+      .reply(200, primaryFixtures.singleLectureSectionWithNoDiscussion);
     renderPage();
 
     await submitSearch();
 
-    expect(await screen.findByText("COMP ENGR SEMINAR")).toBeInTheDocument();
+    expect(await screen.findByText("GROUP STUDIES-MATH")).toBeInTheDocument();
     expect(screen.queryByText(noCoursesMessage)).not.toBeInTheDocument();
     expect(screen.queryByText("Loading courses...")).not.toBeInTheDocument();
+  });
+
+  test("shows discussion sections folded under their lecture", async () => {
+    axiosMock
+      .onGet("/api/public/description/search")
+      .reply(200, primaryFixtures.f24_math_lowerDiv);
+    renderPage();
+
+    await submitSearch();
+
+    // MATH 2A lecture (30247) is shown, its discussion sections are folded
+    expect(
+      await screen.findByTestId("SectionsTable-cell-row-0-col-enrollCode"),
+    ).toHaveTextContent("30247");
+    expect(
+      screen.queryByTestId("SectionsTable-cell-row-0.0-col-enrollCode"),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByTestId("SectionsTable-row-0-expand-button"),
+    );
+
+    // after expanding, the first discussion section (30254) is shown under it
+    expect(
+      screen.getByTestId("SectionsTable-cell-row-0.0-col-enrollCode"),
+    ).toHaveTextContent("30254");
   });
 });

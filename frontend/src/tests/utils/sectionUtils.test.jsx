@@ -7,6 +7,7 @@ import {
   formatInstructors,
   formatInfoLink,
   formatSession,
+  formatGeAreas,
   renderInfoLink,
   renderDetailPageLink,
   formatStatus,
@@ -160,7 +161,7 @@ describe("section utils tests", () => {
       };
       const view = renderInfoLink(row, "testid");
       expect(view.props.children.props.style.color).toBe("black");
-      expect(view.props.children.props.href).toBe("/coursedetails/20244/30247");
+      expect(view.props.children.props.to).toBe("/coursedetails/20244/30247");
       expect(view.props.children.props["target"]).toBe("_blank");
     });
   });
@@ -172,7 +173,7 @@ describe("section utils tests", () => {
         original: { ...course },
       };
       const view = renderDetailPageLink(row, "testid");
-      expect(view.props.children.props.href).toBe("/coursedetails/20244/30247");
+      expect(view.props.children.props.to).toBe("/coursedetails/20244/30247");
       expect(view.props.children.props["target"]).toBe("_blank");
     });
   });
@@ -198,6 +199,30 @@ describe("section utils tests", () => {
       expect(formatStatus(section)).toBe("Open");
     });
   });
+  describe("formatGeAreas tests", () => {
+    test("returns the trimmed GE codes, separated by commas", () => {
+      expect(
+        formatGeAreas([
+          { geCode: "C  ", geCollege: "L&S " },
+          { geCode: "QNT", geCollege: "L&S " },
+        ]),
+      ).toBe("C, QNT");
+    });
+
+    test("returns a single GE code without a comma", () => {
+      expect(formatGeAreas([{ geCode: "D  ", geCollege: "L&S " }])).toBe("D");
+    });
+
+    test("returns empty string for an empty list", () => {
+      expect(formatGeAreas([])).toBe("");
+    });
+
+    test("returns empty string when there are no GE areas (e.g. a section row)", () => {
+      expect(formatGeAreas(undefined)).toBe("");
+      expect(formatGeAreas(null)).toBe("");
+    });
+  });
+
   describe("formatSession tests", () => {
     test("formatSession not summer should return empty string", () => {
       expect(formatSession("20242", "")).toBe("");

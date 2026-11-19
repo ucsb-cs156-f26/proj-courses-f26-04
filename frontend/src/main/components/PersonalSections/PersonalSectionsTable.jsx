@@ -11,6 +11,7 @@ import {
   formatInstructors,
   formatLocation,
   formatTime,
+  formatSession,
 } from "main/utils/sectionUtils.jsx";
 import { hasRole } from "main/utils/currentUser";
 
@@ -47,6 +48,15 @@ export default function PersonalSectionsTable({
       header: "Section",
       cell: ({ cell }) => cell.row.original.classSections[0].section,
       id: "section",
+    },
+    {
+      header: "Session",
+      id: "session",
+      cell: ({ cell }) =>
+        formatSession(
+          cell.row.original.quarter,
+          cell.row.original.classSections[0].session,
+        ),
     },
     {
       header: "Title",
