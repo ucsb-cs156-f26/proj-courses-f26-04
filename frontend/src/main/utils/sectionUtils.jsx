@@ -1,6 +1,7 @@
 import { hhmmTohhmma, convertToTimeRange } from "main/utils/timeUtils.jsx";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
 
 export const convertToFraction = (en1, en2) => {
   return en1 != null && en2 != null ? `${en1}/${en2}` : "";
@@ -110,6 +111,13 @@ export const formatSession = (quarter, session) => {
   return session.length > 5 ? session[5] : "";
 };
 
+/*
+Formats the GE areas of a course (e.g. [{ geCode: "C  ", geCollege: "L&S " }, { geCode: "QNT", ... }])
+as a comma-separated list of GE codes (e.g. "C, QNT"). Section rows have no GE areas, so they get "".
+*/
+export const formatGeAreas = (generalEducation) =>
+  (generalEducation ?? []).map((ge) => ge.geCode.trim()).join(", ");
+
 export const getQuarter = (row) =>
   row.depth === 0 ? row.original.quarter : row.getParentRow().original.quarter;
 
@@ -118,28 +126,28 @@ export const formatInfoLink = (row) =>
 
 export const renderInfoLink = (row, testid) => (
   <p className="text-center">
-    <a
-      href={formatInfoLink(row)}
+    <Link
+      to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-info-link`}
       target={"_blank"}
       rel="noopener noreferrer"
       style={{ color: "black", backgroundColor: "inherit" }}
     >
       <FontAwesomeIcon icon={faInfoCircle} />
-    </a>
+    </Link>
   </p>
 );
 
 export const renderDetailPageLink = (row, testid) => (
   <p className="text-center">
-    <a
-      href={formatInfoLink(row)}
+    <Link
+      to={formatInfoLink(row)}
       data-testid={`${testid}-row-${row.id}-col-detail-link`}
       target={"_blank"}
       rel="noopener noreferrer"
     >
       {row.original.courseId}
-    </a>
+    </Link>
   </p>
 );
 

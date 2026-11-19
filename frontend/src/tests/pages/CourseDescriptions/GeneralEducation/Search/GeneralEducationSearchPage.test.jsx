@@ -1,11 +1,12 @@
 import React from "react";
 import { vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "react-query";
 import * as useBackend from "main/utils/useBackend";
 import GeneralEducationSearchPage from "main/pages/GeneralEducation/Search/GeneralEducationSearchPage";
+import primaryFixtures from "fixtures/primaryFixtures";
 
 vi.mock("main/components/GEAreas/GEAreaSearchForm", () => ({
   __esModule: true,
@@ -82,7 +83,7 @@ describe("GeneralEducationSearchPage tests", () => {
         /No GE courses were found with the specified criteria/i,
       ),
     ).not.toBeInTheDocument();
-    expect(screen.queryByTestId("GEAreaCoursesTable")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("SectionsTable")).not.toBeInTheDocument();
   });
 
   test("shows loading indicator when backend mutation is loading", () => {
@@ -115,40 +116,43 @@ describe("GeneralEducationSearchPage tests", () => {
     ).toBeInTheDocument();
   });
 
-  test("displays course results when search returns courses", async () => {
+  test("displays course results with sections folded under each lecture and GE areas", async () => {
     useBackendMutationSpy.mockImplementation(
       (objectToAxiosParams, options) => ({
         isLoading: false,
-        mutate: () =>
-          options.onSuccess([
-            {
-              quarter: "20232",
-              courseId: "MATH 1A",
-              title: "Calculus I",
-              description: "Intro to calculus",
-              generalEducation: ["A1"],
-            },
-          ]),
+        mutate: () => options.onSuccess(primaryFixtures.f24_math_lowerDiv),
       }),
     );
 
     render(<WrappedPage />);
     await userEvent.click(screen.getByText("Search GE"));
 
-    expect(await screen.findByTestId("GEAreaCoursesTable")).toBeInTheDocument();
+    expect(await screen.findByTestId("SectionsTable")).toBeInTheDocument();
     expect(
       screen.queryByText(
         /No GE courses were found with the specified criteria/i,
       ),
     ).not.toBeInTheDocument();
+
+    // first lecture: MATH 2A (enroll code 30247), GE areas C and QNT
     expect(
-      screen.getByTestId("GEAreaCoursesTable-cell-row-0-col-courseId"),
-    ).toHaveTextContent("MATH 1A");
+      screen.getByTestId("SectionsTable-cell-row-0-col-courseId"),
+    ).toHaveTextContent("MATH 2A");
     expect(
-      screen.getByTestId(
-        "GEAreaCoursesTable-cell-row-0-col-generalEducationAreas",
-      ),
-    ).toHaveTextContent("A1");
+      screen.getByTestId("SectionsTable-cell-row-0-col-enrollCode"),
+    ).toHaveTextContent("30247");
+    expect(
+      screen.getByTestId("SectionsTable-cell-row-0-col-geAreas"),
+    ).toHaveTextContent("C, QNT");
+
+    // its discussion sections start folded, and appear after clicking +
+    expect(
+      screen.queryByTestId("SectionsTable-cell-row-0.0-col-enrollCode"),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("SectionsTable-row-0-expand-button"));
+    expect(
+      screen.getByTestId("SectionsTable-cell-row-0.0-col-enrollCode"),
+    ).toHaveTextContent("30254");
   });
 
   test("objectToAxiosParams converts ALL area to empty string and keeps other values", () => {

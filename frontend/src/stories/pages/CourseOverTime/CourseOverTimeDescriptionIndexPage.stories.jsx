@@ -1,11 +1,11 @@
 import {
-  summerSessionSections,
-  nonSummerSessionSections,
+  summerSessionPrimaries,
+  nonSummerSessionPrimaries,
 } from "fixtures/courseOverTimeSessionFixtures";
 import React from "react";
 
 import CourseOverTimeDescriptionIndexPage from "main/pages/CourseOverTime/CourseOverTimeDescriptionIndexPage";
-import { threeSections } from "fixtures/sectionFixtures";
+import primaryFixtures from "fixtures/primaryFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 
@@ -50,13 +50,21 @@ const parametersForSections = (sections) => ({
   ],
 });
 
-Default.parameters = parametersForSections(threeSections);
+Default.parameters = {
+  ...parametersForSections(primaryFixtures.f24_math_lowerDiv),
+  docs: {
+    description: {
+      story:
+        "Enter any search terms, then Submit. Each lecture has a ➕ button that unfolds its discussion sections.",
+    },
+  },
+};
 
 export const SessionExamples = Template.bind({});
 SessionExamples.parameters = {
   ...parametersForSections([
-    ...summerSessionSections,
-    ...nonSummerSessionSections,
+    ...summerSessionPrimaries,
+    ...nonSummerSessionPrimaries,
   ]),
   docs: {
     description: {
