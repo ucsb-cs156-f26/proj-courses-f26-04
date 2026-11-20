@@ -654,7 +654,10 @@ describe("SectionsTable tests", () => {
       render(
         <QueryClientProvider client={queryClient}>
           <MemoryRouter>
-            <SectionsTable sections={primaryFixtures.f24_math_lowerDiv} />
+            <SectionsTable
+              sections={primaryFixtures.f24_math_lowerDiv}
+              schedules={[{ id: 1, name: "F24 Schedule", quarter: "20244" }]}
+            />
           </MemoryRouter>
         </QueryClientProvider>,
       );
@@ -713,18 +716,29 @@ describe("SectionsTable tests", () => {
   describe("AddToScheduleModal interactions when there are no schedules", () => {
     const queryClient = new QueryClient();
     let axiosMock;
-    beforeEach(() => {
+    beforeEach(async () => {
+      const { useBackendMutation: realUseBackendMutation } =
+        await vi.importActual("main/utils/useBackend");
+      useBackendMutation.mockImplementation(realUseBackendMutation);
+
       axiosMock = new AxiosMockAdapter(axios);
       axiosMock
         .onGet("/api/currentUser")
         .reply(200, apiCurrentUserFixtures.userOnly);
+      axiosMock.onPost("/api/personalschedules/post").reply(200, {
+        id: 42,
+        name: "F24",
+      });
+      axiosMock
+        .onPost("/api/courses/post")
+        .reply(200, [{ id: 1, enrollCd: "30247" }]);
     });
 
     afterEach(() => {
       axiosMock.restore();
     });
 
-    test("When there are no schedules, the message about there being no schedules shows up", async () => {
+    test("When there are no schedules, a schedule is created and the course is added without a modal", async () => {
       render(
         <QueryClientProvider client={queryClient}>
           <MemoryRouter>
@@ -766,21 +780,25 @@ describe("SectionsTable tests", () => {
       fireEvent.click(addToScheduleButton);
 
       await waitFor(() => {
-        // check that the <body> element has the class "modal-open"
-        expect(document.body.classList.contains("modal-open")).toBe(true);
+        expect(
+          axiosMock.history.post.some(
+            (request) => request.url === "/api/courses/post",
+          ),
+        ).toBe(true);
       });
 
-      await waitFor(() => {
-        expect(
-          screen.getByTestId(`${testId}-cell-row-0.2-col-action-modal`),
-        ).toBeInTheDocument();
+      const createScheduleRequest = axiosMock.history.post.find(
+        (request) => request.url === "/api/personalschedules/post",
+      );
+      expect(createScheduleRequest.params).toEqual({
+        name: "F24",
+        description: "",
+        quarter: "20244",
       });
-
-      await waitFor(() => {
-        expect(
-          screen.getByTestId(`${testId}-cell-row-0.2-col-action-no-schedules`),
-        ).toBeInTheDocument();
-      });
+      expect(
+        screen.queryByTestId(`${testId}-cell-row-0.2-col-action-modal`),
+      ).not.toBeInTheDocument();
+      expect(document.body.classList.contains("modal-open")).toBe(false);
     });
   });
 });
