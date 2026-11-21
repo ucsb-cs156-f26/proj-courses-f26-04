@@ -197,6 +197,9 @@ export default function CSVDownloadsPage({
                     controlId={enrollmentQuarterControlId}
                   />
                 </div>
+                <Button type="submit" variant="primary">
+                  Download CSV
+                </Button>
               </Form>
             </Accordion.Body>
           </Accordion.Item>
