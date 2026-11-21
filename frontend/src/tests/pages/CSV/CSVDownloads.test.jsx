@@ -269,6 +269,22 @@ describe("CSVDownloadsPage tests", () => {
         "20221",
       );
     });
+
+    test("submitting enrollment form downloads selected quarter", async () => {
+      const { assignMock, browserLocation } = mockLocationAssign();
+      renderPage(browserLocation);
+      await openEnrollmentSection();
+
+      fireEvent.change(screen.getByTestId("CSVDownloads.EnrollmentQuarter"), {
+        target: { value: "20242" },
+      });
+      fireEvent.submit(screen.getByTestId("CSVDownloads.EnrollmentForm"));
+
+      expect(assignMock).toHaveBeenCalledTimes(1);
+      expect(assignMock).toHaveBeenCalledWith(
+        "/api/enrollment/csv/quarter?yyyyq=20242",
+      );
+    });
   });
 
   test("uses default quarter range when systemInfo has no quarter data", async () => {
