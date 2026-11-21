@@ -16,6 +16,8 @@ const csvLevels = [
 ];
 // Stryker restore all
 
+const enrollmentQuarterControlId = "CSVDownloads.EnrollmentQuarter";
+
 export default function CSVDownloadsPage({
   browserLocation = window.location,
 }) {
@@ -68,6 +70,12 @@ export default function CSVDownloadsPage({
     e.preventDefault();
     downloadCsv(byQuarterAndSubjectUrl);
   };
+
+  // Start from the quarter saved in localStorage (if any), so the selection
+  // is restored after a page reload.
+  const [enrollmentQuarter, setEnrollmentQuarter] = useState(
+    () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
+  );
 
   return (
     <BasicLayout>
@@ -172,6 +180,16 @@ export default function CSVDownloadsPage({
               <p>
                 Download enrollment data for all UCSB sections in a quarter.
               </p>
+              <Form>
+                <div className="mb-3">
+                  <SingleQuarterDropdown
+                    quarters={quarters}
+                    quarter={enrollmentQuarter}
+                    setQuarter={setEnrollmentQuarter}
+                    controlId={enrollmentQuarterControlId}
+                  />
+                </div>
+              </Form>
             </Accordion.Body>
           </Accordion.Item>
         </Accordion>
