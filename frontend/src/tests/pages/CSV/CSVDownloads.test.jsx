@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import axios from "axios";
 import AxiosMockAdapter from "axios-mock-adapter";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -283,6 +289,26 @@ describe("CSVDownloadsPage tests", () => {
       expect(assignMock).toHaveBeenCalledTimes(1);
       expect(assignMock).toHaveBeenCalledWith(
         "/api/enrollment/csv/quarter?yyyyq=20242",
+      );
+    });
+
+    test("clicking Download CSV in the enrollment section downloads selected quarter", async () => {
+      const { assignMock, browserLocation } = mockLocationAssign();
+      renderPage(browserLocation);
+      await openEnrollmentSection();
+
+      fireEvent.change(screen.getByTestId("CSVDownloads.EnrollmentQuarter"), {
+        target: { value: "20241" },
+      });
+      const enrollmentForm = screen.getByTestId("CSVDownloads.EnrollmentForm");
+      const enrollmentButton = within(enrollmentForm).getByRole("button", {
+        name: "Download CSV",
+      });
+      fireEvent.click(enrollmentButton);
+
+      expect(assignMock).toHaveBeenCalledTimes(1);
+      expect(assignMock).toHaveBeenCalledWith(
+        "/api/enrollment/csv/quarter?yyyyq=20241",
       );
     });
   });
