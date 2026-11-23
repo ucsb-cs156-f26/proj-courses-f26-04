@@ -48,6 +48,11 @@ export default function CSVDownloadsPage({
   const [level, setLevel] = useState("U");
   const [omitSections, setOmitSections] = useState(true);
   const [withTimeLocations, setWithTimeLocations] = useState(true);
+  // Start from the quarter saved in localStorage (if any), so the selection
+  // is restored after a page reload.
+  const [enrollmentQuarter, setEnrollmentQuarter] = useState(
+    () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
+  );
 
   const byQuarterUrl = `/api/courses/csv/quarter?yyyyq=${encodeURIComponent(quarter)}`;
   const byQuarterAndSubjectUrl =
@@ -56,6 +61,7 @@ export default function CSVDownloadsPage({
     `&level=${encodeURIComponent(level)}` +
     `&omitSections=${omitSections}` +
     `&withTimeLocations=${withTimeLocations}`;
+  const byEnrollmentQuarterUrl = `/api/enrollment/csv/quarter?yyyyq=${encodeURIComponent(enrollmentQuarter)}`;
 
   const downloadCsv = (url) => {
     browserLocation.assign(url);
@@ -71,11 +77,10 @@ export default function CSVDownloadsPage({
     downloadCsv(byQuarterAndSubjectUrl);
   };
 
-  // Start from the quarter saved in localStorage (if any), so the selection
-  // is restored after a page reload.
-  const [enrollmentQuarter, setEnrollmentQuarter] = useState(
-    () => localStorage.getItem(enrollmentQuarterControlId) || quarters[0].yyyyq,
-  );
+  const handleEnrollmentSubmit = (e) => {
+    e.preventDefault();
+    downloadCsv(byEnrollmentQuarterUrl);
+  };
 
   return (
     <BasicLayout>
@@ -180,7 +185,10 @@ export default function CSVDownloadsPage({
               <p>
                 Download enrollment data for all UCSB sections in a quarter.
               </p>
-              <Form>
+              <Form
+                onSubmit={handleEnrollmentSubmit}
+                data-testid="CSVDownloads.EnrollmentForm"
+              >
                 <div className="mb-3">
                   <SingleQuarterDropdown
                     quarters={quarters}
